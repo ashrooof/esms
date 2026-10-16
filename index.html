@@ -416,7 +416,7 @@ const card=(id,l,ic,c,inner,cl='full')=>`<div class="fc ${cl} sr" id="w_${id}" s
 const inp=(id,ph,ex='')=>`<input id="${id}" placeholder="${ph}" ${ex}>`;
 $('f').innerHTML=`<div class="sec sr" id="secP">${ico('smile')}بياناتك الشخصية</div>
 ${card('photo','الصورة الشخصية','cam','#8b5cf6',`<div class="pb"><button type="button" class="avatar" id="av" aria-label="رفع صورة">${ico('cam')}</button><div class="pi"><input type="file" id="photo" accept="image/*" hidden><button type="button" class="pbtn" id="pb">${ico('cam')}<span id="pbt">اختر صورة</span></button><div class="meta" id="meta">بتتحفظ بجودتها الأصلية من غير أي ضغط</div></div></div>`)}
-${card('name','الاسم رباعي','user','#3b82f6',inp('name','مثال: أحمد محمد علي حسن')+'<div class="hint">زي ما هو مكتوب في البطاقة الشخصية</div>')}
+${card('name','الاسم رباعي','user','#3b82f6',inp('name','مثال: أشــرف موسي عزيز  ...')+'<div class="hint">زي ما هو مكتوب في البطاقة الشخصية</div>')}
 <div class="sec sr">${ico('chat')}بيانات التواصل</div>
 ${card('code','الكود الجامعي','id','#6366f1',inp('code','مثال: 20250123','inputmode="numeric"'),'')}
 ${card('phone','رقم التليفون','phone','#22c55e',inp('phone','01XXXXXXXXX','inputmode="tel" dir="ltr" style="text-align:right"')+'<div class="hint wh">'+ico('wa')+'لازم يكون عليه واتساب، هنتواصل معاك من خلاله</div>','')}
