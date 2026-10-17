@@ -809,7 +809,7 @@ const PH_MSG={
   blocked:'تعذر الوصول لملف الصورة (صلاحيات مشاركة الملف على Drive أو حظر من المتصفح/الشبكة).',
   invalid:'ملف الصورة المسجّل تالف أو مش صورة صالحة.',
   mismatch:'الصورة لا تطابق سجل العضو، فتم إيقاف إصدار الكارنيه حمايةً لبياناتك.',
-  server:'الخادم المنشور لا يسلّم صورة الكارنيه (نسخة Code.gs المنشورة قديمة). الإدارة تحتاج إعادة نشر الخادم كنسخة جديدة.',
+  server:'خدمة إصدار الكارنيه غير متاحة مؤقتًا، حاول مرة أخرى بعد قليل.',
   notaccepted:'الكارنيه متاح للأعضاء المقبولين فقط.',
   closed:'الاستعلام غير متاح حاليًا، حاول لاحقًا.'
 };
@@ -1075,7 +1075,7 @@ function cardBoxSet(state,m,err){
   if(state==='loading'){b.insertAdjacentHTML('beforeend','<p class="cld"><span class="spin g"></span>جاري تحميل صورتك وتجهيز الكارنيه…</p>');return}
   if(state==='err'){
     const k=err&&err.kind,msg=(err&&err.message)||'تعذر تجهيز الكارنيه.';
-    b.insertAdjacentHTML('beforeend','<p class="cerr">'+esc(msg)+'<br><small>حالة طلبك لسه «مقبول» ومتغيّرتش — المشكلة في تحميل الصورة فقط.</small></p>'+((k==='missing'||k==='mismatch'||k==='notaccepted'||k==='server')?'<p class="rf" style="font-size:.8rem;color:var(--mut)">تواصل مع الإدارة لتصحيح الصورة المسجّلة.</p>':'<button class="btn sm" id="cretry" type="button">'+ico('refresh')+'إعادة المحاولة</button>'));
+    b.insertAdjacentHTML('beforeend','<p class="cerr">'+esc(msg)+'<br><small>حالة طلبك لسه «مقبول» ومتغيّرتش — المشكلة في تحميل الصورة فقط.</small></p>'+((k==='missing'||k==='mismatch'||k==='notaccepted')?'<p class="rf" style="font-size:.8rem;color:var(--mut)">تواصل مع الإدارة لتصحيح الصورة المسجّلة.</p>':'<button class="btn sm" id="cretry" type="button">'+ico('refresh')+'إعادة المحاولة</button>'));
     const r=$('cretry');if(r)r.onclick=()=>buildCard(m,true);return;
   }
   let node;cardUrl='';
