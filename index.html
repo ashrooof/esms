@@ -301,6 +301,13 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 .cardbox .cerr small{display:block;color:var(--mut);font-weight:400;margin-top:4px}
 #toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;z-index:99;max-width:min(92vw,520px);padding:12px 16px;border-radius:14px;color:#fff;font-weight:600;font-size:.88rem;line-height:1.7;text-align:center;transition:.35s var(--e);box-shadow:0 10px 30px rgba(0,0,0,.3)}
 #toast,#e_pw,#stx div{white-space:pre-line}
+.qlf{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:10px 0}
+.qlf input,.qlf select{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:.85rem}
+.qlw{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:12px;margin:10px 0}
+.qtab{width:100%;border-collapse:collapse;font-size:.8rem;white-space:nowrap}
+.qtab th,.qtab td{padding:8px 10px;text-align:start;border-bottom:1px solid var(--line)}
+.qtab th{position:sticky;top:0;background:var(--sol);font-weight:700}
+.qb{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--c);color:var(--c);font-weight:700}
 #toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 #toast.ok{background:var(--ok)}#toast.bad{background:var(--bad)}#toast a{color:#fff;text-decoration:underline;font-weight:800}
 </style>
@@ -473,6 +480,19 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 <div class="lg" id="lgb"></div>
 <button class="btn sec sm" id="lgx" type="button"></button>
 </details>
+<details class="bulk" id="qld">
+<summary>سجل الاستعلامات <span class="lgn" id="qln">0</span></summary>
+<div class="qlf">
+<input id="qlq" placeholder="رقم الطالب أو الاسم" autocomplete="off">
+<select id="qlr" aria-label="النتيجة"><option value="">كل النتائج</option><option value="found">ناجح</option><option value="not_found">لم يُعثر على بيانات</option><option value="closed">الاستعلام مغلق</option></select>
+<input id="qlf" type="date" aria-label="من تاريخ">
+<input id="qlt" type="date" aria-label="إلى تاريخ">
+</div>
+<div class="acts"><button class="btn sec sm" id="qlref" type="button">تحديث السجل</button></div>
+<div id="qlmsg" class="hint" role="status"></div>
+<div class="qlw"><table class="qtab"><thead><tr><th>الوقت</th><th>رقم الطالب</th><th>الاسم</th><th>رقم العضوية</th><th>الحالة</th><th>النتيجة</th><th>المصدر</th></tr></thead><tbody id="qlb"></tbody></table></div>
+<button class="btn sec sm" id="qlmore" type="button" style="display:none">تحميل المزيد</button>
+</details>
 <div class="stats" id="stats"></div>
 <div class="mhead">عضوية البورصة</div>
 <div class="stats mstats" id="mstats"></div>
@@ -535,7 +555,7 @@ const apiGet=(action,params={})=>apiFetch(apiUrl(action,params),{cache:'no-store
 const apiPost=data=>apiFetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(data)},150000);
 const auth=()=>({token:ADMIN_TOKEN});
 
-/* ─── نظام الرسائل الموحّد (نفس جدول Code.gs حرفيًا) ─── */
+/* ─── نظام الرسائل الموحّد (نفس جدول Code.gs حرفيًا، عدا قالب «الإيصال» فهو للإدارة فقط ولا يُعرض للمستخدم) ─── */
 const MSG_TABLE={
  "new_member": {
   "t": "تسجيل عضو جديد",
@@ -639,13 +659,6 @@ const MSG_TABLE={
    "🎫 تم إنشاء التذكرة بنجاح",
    "🆔 رقم التذكرة: {ticket_id}",
    "👤 العضو: {name}"
-  ]
- },
- "receipt_downloaded": {
-  "t": "الإيصال",
-  "l": [
-   "🧾 تم تنزيل الإيصال",
-   "🆔 رقم العضوية: {code}"
   ]
  },
  "photo_failed": {
@@ -977,7 +990,7 @@ function toast(msg,kind,href){
   clearTimeout(toastT);toastT=setTimeout(()=>{t.className=''},href?12000:6000);
 }
 async function receiptMember(m){
-  try{const r=await toTimeout(apiGet('lookup',{code:m.code}),6000);
+  try{const r=await toTimeout(apiGet('lookup',{code:m.code,src:'internal'}),6000);
     if(r&&r.found)return {...m,name:r.name||m.name,st:r.status||m.st||'review',ticket:r.ticket||m.ticket||'',ticketNo:'',present:r.present||r.Present||m.present}}catch(e){}
   return m;
 }
@@ -991,10 +1004,9 @@ async function downloadReceipt(m,btn,fresh){
     const blob=await new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('تعذر تحويل الإيصال لصورة')),'image/png'));
     if(!blob||blob.size<5000)throw new Error('الصورة الناتجة غير مكتملة');
     const name='ESMS-receipt-'+String(mm.code).replace(/[^\w-]/g,'')+'.png';
-    const url=saveBlob(blob,name);
-    toast(msgBuild('receipt_downloaded',{code:mm.code}),'ok',url);
+    saveBlob(blob,name);
     clientEvent('receipt_downloaded',mm.code);
-  }catch(e){toast('تعذر إنشاء أو تنزيل الإيصال: '+((e&&e.message)||'خطأ غير معروف')+' — جرّب تاني.','bad')}
+  }catch(e){toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad')}
   finally{dlBusy=false;if(btn){btn.disabled=false;btn.innerHTML=old}}
 }
 
@@ -1065,10 +1077,9 @@ function cardBoxSet(state,m,err){
   catch(e){node=cardCv}
   node.className='cardimg';b.appendChild(node);
   b.insertAdjacentHTML('beforeend','<p class="rf" style="font-size:.78rem;color:var(--mut);margin:8px 0 0">'+(cardUrl?'اضغط على الكارنيه للتكبير والحفظ كصورة':'')+'</p>');
-  $('lcard').style.display=cardUrl?'':'none';
 }
 async function buildCard(m,force){
-  const tok=lkTok;cardCv=null;cardUrl='';$('lcard').style.display='none';
+  const tok=lkTok;cardCv=null;cardUrl='';
   cardBoxSet('loading',m);
   try{
     const ph=await fetchMemberPhoto(m,force);if(tok!==lkTok)return;
@@ -1121,7 +1132,7 @@ $('bRcpt').innerHTML=ico('dl')+'تنزيل الإيصال';
 $('bBack').innerHTML=ico('back')+'رجوع';
 $('bRcpt').onclick=()=>downloadReceipt(regM,$('bRcpt'),true);
 $('bBack').onclick=()=>showForm();
-$('lcard').innerHTML=ico('dl')+'تنزيل الكارنيه كصورة';
+$('lcard').innerHTML=ico('dl')+'تنزيل الكارنيه';
 $('lback').innerHTML=ico('back')+'رجوع للصفحة الرئيسية';
 $('lgo').innerHTML=ico('track')+'استعلم';
 $('lcopy').innerHTML=ico('copy')+'نسخ الرقم';
@@ -1242,13 +1253,13 @@ function setSt(k,msg){
   const box=$('stx');box.querySelectorAll('div:not(.o)').forEach(d=>{d.classList.add('o');setTimeout(()=>d.remove(),220)});
   const n=document.createElement('div');n.textContent=msg;box.appendChild(n);
 }
-let lkM=null,cardCv=null,cardUrl='';
+let lkM=null,cardCv=null,cardUrl='',cardP=null,cardDl=false;
 (()=>{const n=40,k=4,p=[];for(let i=0;i<n*2;i++){const x=100-((i+1)*100)/(n*2),y=i%2===0?'100%':`calc(100% - ${k}px)`;p.push(`${x}% ${y}`)}const cp=`polygon(0 0,100% 0,100% calc(100% - ${k}px),${p.join(',')})`;$('paper').dataset.cp=cp;$('paper').style.clipPath=cp})();
 const PT=['calc(-100% + 2px)','-91%','-91%','-81%','-81%','-70%','-70%','-58%','-58%','-45%','-45%','-32%','-32%','-20%','-20%','-10%','-10%','-3%','-3%','0%'];
 const PTm=[0,.075,.105,.18,.21,.285,.315,.39,.42,.495,.525,.6,.63,.705,.735,.81,.84,.915,.945,1];
 function resetPaper(){
   lkTok++;if(anim){anim.cancel();anim=null}
-  const o=$('out');o.style.height='0px';o.classList.remove('on');$('cardbox').style.display='none';$('cardbox').innerHTML='';$('lcard').style.display='none';cardCv=null;cardUrl='';$('pw').style.transform='';$('lacts').classList.remove('on');
+  const o=$('out');o.style.height='0px';o.classList.remove('on');$('cardbox').style.display='none';$('cardbox').innerHTML='';$('lcard').style.display='none';cardCv=null;cardUrl='';cardP=null;$('pw').style.transform='';$('lacts').classList.remove('on');
 }
 function feed(){return new Promise(res=>{
   const o=$('out'),pw=$('pw');o.classList.add('on');o.style.height=(pw.offsetHeight+28)+'px';
@@ -1264,7 +1275,7 @@ async function lookup(){
   busy=true;$('lq').disabled=$('lgo').disabled=true;resetPaper();
   setSt('proc','بنبحث عن طلبك…');
   try{
-    const r=await apiGet('lookup',{code:raw});
+    const r=await apiGet('lookup',{code:raw,src:'web',rid:Date.now().toString(36)+Math.random().toString(36).slice(2,10)});
     if(!r.found){setSt('nf',r.message||'مفيش طلب مسجل بالكود ده');return}
     const m={code:r.code,name:r.name,st:r.status||'review',ticket:r.ticket||'',
       photo:photoSrc(r.photo,''),photoUrl:r.photo||'',photoId:r.photoId||r.PhotoID||'',present:r.present||r.Present||'',pdf:r.pdfUrl||r.pdf||''};
@@ -1275,7 +1286,7 @@ async function lookup(){
     await feed();
     setSt('done','دي حالة طلبك دلوقتي');
     $('lprint').innerHTML=ico('dl')+'تنزيل الإيصال';
-    if(m.st==='accepted')buildCard(m);else cardBoxSet('none',m);
+    if(m.st==='accepted'){cardP=buildCard(m);$('lcard').style.display=''}else{cardP=null;cardBoxSet('none',m);$('lcard').style.display='none'}
     const cp=!!curTk&&!isLink(curTk);$('lcopy').style.display=cp?'':'none';$('lnew').style.gridColumn=cp?'':'1/-1';
     const tl=m.st==='accepted'?(isLink(m.ticket)?m.ticket:isLink(m.pdf)?m.pdf:''):'';
     const k=$('ltk');k.style.display=tl?'':'none';k.innerHTML=ico('ticket')+'فتح التذكرة';
@@ -1301,7 +1312,19 @@ function zoomCard(){
   const dd=$('lbd');dd.innerHTML=ico('dl')+'حفظ الكارنيه';dd.href=cardUrl;dd.download='ESMS-card-'+lkM.code+'.png';$('lb').classList.add('show');
 }
 $('lprint').onclick=()=>downloadReceipt(lkM,$('lprint'),false);
-$('lcard').onclick=()=>{if(cardUrl&&lkM){const a=document.createElement('a');a.href=cardUrl;a.download='ESMS-card-'+String(lkM.code).replace(/[^\w-]/g,'')+'.png';document.body.appendChild(a);a.click();a.remove();toast('تم تنزيل الكارنيه','ok')}else toast('الكارنيه مش جاهز للتنزيل — اضغط مطولًا على الصورة لحفظها.','bad')};
+$('lcard').onclick=async()=>{
+  const m=lkM;if(!m||m.st!=='accepted'||cardDl)return;
+  cardDl=true;const b=$('lcard'),old=b.innerHTML;b.disabled=true;b.innerHTML='<span class="spin g"></span>جاري تجهيز الكارنيه…';
+  try{
+    if(!cardCv&&cardP)await cardP;
+    if(!cardCv)await buildCard(m,true);
+    if(!cardCv||m!==lkM)throw new Error('card');
+    const blob=await new Promise((res,rej)=>cardCv.toBlob(x=>x?res(x):rej(new Error('blob')),'image/png'));
+    if(!blob||blob.size<5000)throw new Error('small');
+    saveBlob(blob,'ESMS-card-'+String(m.code).replace(/[^\w-]/g,'')+'.png');
+  }catch(e){toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad')}
+  finally{cardDl=false;b.disabled=false;b.innerHTML=old}
+};
 $('lback').onclick=()=>{updateBanner();scrollTo({top:0,behavior:'smooth'})};
 $('lgo').onclick=lookup;
 $('lq').onkeydown=e=>{if(e.key==='Enter')lookup()};
@@ -1374,7 +1397,7 @@ async function closeDash(){
   const b=$('bout');if(b)b.disabled=true;
   const t=ADMIN_TOKEN;stopPoll();
   try{if(t)await apiGet('logout',{token:t})}catch{}
-  ADMIN_TOKEN='';db=[];lgArr=[];lastSig='';fC='all';fS='all';
+  ADMIN_TOKEN='';db=[];lgArr=[];lastSig='';fC='all';fS='all';qlReset();
   $('q').value='';$('people').innerHTML='';$('printArea').innerHTML='';closeLb();$('tm').classList.remove('show');
   $('dash').classList.remove('show');
   if(b)b.disabled=false;
@@ -1542,6 +1565,39 @@ function renderLog(){
   }).join(''):'<div class="empty">لا توجد أحداث</div>';
 }
 $('lgx').onclick=()=>csvDl('esms-log.csv',[['Time','Type','Details','Actor'],...lgArr.map(x=>[new Date(x.t).toISOString(),x.k,x.d,x.a])]);
+
+/* ─── سجل الاستعلامات (من الخادم فقط) ─── */
+const QL={rows:[],total:0,hasMore:false,busy:false,loaded:false,seq:0};
+const QL_RES={found:['ناجح','#2f7d4f'],not_found:['لم يُعثر على بيانات','#b3392e'],closed:['الاستعلام مغلق','#6b6250']};
+const QL_SRC={web:'الموقع'};
+function qlRender(){
+  $('qln').textContent=QL.total;
+  $('qlb').innerHTML=QL.rows.length?QL.rows.map(x=>{
+    const r=QL_RES[x.result]||[x.result,'#6b6250'],s=x.status?(ST[x.status]||[x.status])[0]:'—';
+    return `<tr><td dir="ltr">${esc(new Date(x.t).toLocaleString('en-GB',{hour12:false,timeZone:'Africa/Cairo'}))}</td><td dir="ltr">${esc(x.q||'—')}</td><td>${esc(x.name||'—')}</td><td dir="ltr">${esc(x.code||'—')}</td><td>${esc(s)}</td><td><span class="qb" style="--c:${r[1]}">${esc(r[0])}</span></td><td>${esc(QL_SRC[x.source]||x.source||'—')}</td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mut)">لا توجد استعلامات</td></tr>';
+  $('qlmore').style.display=QL.hasMore?'':'none';
+  $('qlmore').textContent='تحميل المزيد ('+QL.rows.length+' من '+QL.total+')';
+}
+async function qlLoad(reset){
+  if(!ADMIN_TOKEN||(!reset&&QL.busy))return;
+  const seq=++QL.seq;QL.busy=true;$('qlmsg').textContent='جاري التحميل…';$('qlmore').disabled=true;
+  try{
+    const r=await apiGet('get_lookup_log',{...auth(),q:$('qlq').value.trim(),result:$('qlr').value,from:$('qlf').value,to:$('qlt').value,offset:reset?0:QL.rows.length,limit:50});
+    if(seq!==QL.seq)return;
+    QL.rows=reset?(r.rows||[]):QL.rows.concat(r.rows||[]);QL.total=r.total||0;QL.hasMore=!!r.hasMore;QL.loaded=true;
+    $('qlmsg').textContent='';qlRender();
+  }catch(e){if(seq===QL.seq)$('qlmsg').textContent=e.message||'تعذر تحميل السجل'}
+  finally{if(seq===QL.seq){QL.busy=false;$('qlmore').disabled=false}}
+}
+function qlReset(){QL.seq++;QL.rows=[];QL.total=0;QL.hasMore=false;QL.loaded=false;QL.busy=false;
+  ['qlq','qlf','qlt'].forEach(i=>$(i).value='');$('qlr').value='';$('qlb').innerHTML='';$('qlmsg').textContent='';$('qln').textContent='0';$('qlmore').style.display='none';$('qld').open=false}
+let qlT=null;
+$('qld').addEventListener('toggle',()=>{if($('qld').open&&!QL.loaded)qlLoad(true)});
+$('qlq').oninput=()=>{clearTimeout(qlT);qlT=setTimeout(()=>qlLoad(true),400)};
+['qlr','qlf','qlt'].forEach(i=>$(i).onchange=()=>qlLoad(true));
+$('qlref').onclick=()=>qlLoad(true);
+$('qlmore').onclick=()=>qlLoad(false);
 
 /* ═══════════════════════════════════════════════════════════════
    Reveal animations
