@@ -295,6 +295,13 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
   .pa-pg:last-child{break-after:auto;page-break-after:auto}
   .pa-card{width:180mm;height:auto;display:block;border-radius:4mm}
 }
+.rb{display:flex;flex-direction:column;gap:10px;padding:14px 16px;margin:0 0 16px;border:1px solid var(--line);border-radius:16px;background:var(--card);font-weight:600;text-align:center}
+.rb[hidden]{display:none}.rb .acts{grid-template-columns:1fr 1fr}
+.cardbox .cld{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--mut);font-weight:600;font-size:.88rem}
+.cardbox .cerr small{display:block;color:var(--mut);font-weight:400;margin-top:4px}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;z-index:99;max-width:min(92vw,520px);padding:12px 16px;border-radius:14px;color:#fff;font-weight:600;font-size:.88rem;line-height:1.7;text-align:center;transition:.35s var(--e);box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast.ok{background:var(--ok)}#toast.bad{background:var(--bad)}#toast a{color:#fff;text-decoration:underline;font-weight:800}
 </style>
 </head>
 <body>
@@ -335,6 +342,7 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 <symbol id="i-track" viewBox="0 0 24 24"><rect x="3.5" y="4" width="13.5" height="17" rx="2.6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.4"/><rect x="7" y="2.4" width="6.5" height="3.6" rx="1.2" fill="#6366f1"/><rect x="6.5" y="10" width="7" height="1.6" rx=".8" fill="#818cf8"/><rect x="6.5" y="13.4" width="4.5" height="1.6" rx=".8" fill="#a5b4fc"/><circle cx="16.4" cy="16.4" r="3.6" fill="#fff" stroke="#f59e0b" stroke-width="2"/><path d="m19.1 19.1 2.7 2.7" stroke="#f59e0b" stroke-width="2.4" stroke-linecap="round"/></symbol>
 <symbol id="i-adduser" viewBox="0 0 24 24"><circle cx="9.5" cy="8" r="3.7" fill="#6366f1"/><path d="M2.5 20c0-4 3.1-6.3 7-6.3s7 2.3 7 6.3z" fill="#818cf8"/><circle cx="18.5" cy="7" r="4" fill="#10b981"/><path d="M18.5 5v4M16.5 7h4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></symbol>
 <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/><path d="M10 12h10m0 0-3.5-3.5M20 12l-3.5 3.5" fill="none" stroke="#ef4444" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e0e7ff"/><path d="M10 7l5 5-5 5" fill="none" stroke="#6366f1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round"/><path d="M18.5 2.8v4.4h-4.4M5.5 21.2v-4.4h4.4" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </defs></svg>
 
@@ -350,6 +358,7 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 
 <div class="pbar" id="pbar"><div class="trk"><i id="pf"></i></div><span id="pt">0%</span></div>
 
+<div class="rb" id="rb" hidden></div>
 <form id="f" class="grid" novalidate onsubmit="return false"></form>
 
 <div class="done" id="done">
@@ -358,8 +367,10 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 <p class="sub">بياناتك اتحفظت وطلبك الآن تحت المراجعة.<br>التسجيل لا يعني القبول؛ استعلم بكودك لمعرفة حالة طلبك.</p>
 <div class="tk"><span>الكود الجامعي المسجّل</span><b id="tkt">—</b></div>
 <div class="acts" style="margin-top:14px">
+<button class="btn sm span" id="bRcpt" type="button"></button>
 <button class="btn sm" id="bPrint" type="button"></button>
-<button class="btn sec sm" id="bAgain" type="button"></button>
+<button class="btn sec sm" id="bBack" type="button"></button>
+<button class="btn sec sm span" id="bAgain" type="button"></button>
 </div>
 </div>
 
@@ -383,9 +394,11 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 <div id="cardbox" class="cardbox" style="display:none"></div>
 <div class="acts lacts" id="lacts">
 <button class="btn sm span" id="lprint" type="button"></button>
+<button class="btn sm span" id="lcard" type="button" style="display:none"></button>
 <a class="btn sm span" id="ltk" style="display:none"></a>
 <button class="btn sm" id="lcopy" type="button"></button>
 <button class="btn sec sm" id="lnew" type="button"></button>
+<button class="btn sec sm span" id="lback" type="button"></button>
 </div>
 </div>
 </section>
@@ -394,6 +407,7 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 </div>
 
 <div id="printArea" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <div id="pin"><div class="card">
 <svg class="ci big"><use href="#i-lock"/></svg>
 <h3 style="margin:0 0 14px;font-family:Amiri,serif;font-size:1.4rem">دخول الإدارة</h3>
@@ -484,7 +498,7 @@ const wa=p=>'20'+String(p||'').replace(/^0/,'');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LOGO_L=document.querySelector('header .hero img').src,LOGO_D=document.querySelector('header .hero source').srcset;
 document.querySelector('aside .hero img').src=LOGO_D;$('ml').src=LOGO_D;
-const FB='https://www.facebook.com/share/19cdJzttPg/';
+const FB='https://www.facebook.com/share/19XD97mMk6/';
 const sf=s=>{s=String(s==null?'':s);return /^[=+\-@\t\r]/.test(s)?"'"+s:s};
 function csvDl(name,rows){const b=new Blob(['\ufeff'+rows.map(r=>r.map(s=>'"'+sf(s).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 const isYes=p=>/^(yes|true|1|موجود|نعم)$/i.test(String(p||'').trim());
@@ -581,17 +595,88 @@ function photoCands(url,id){
   if(url&&!out.includes(url))out.push(url);
   return out;
 }
-const tryLoad=(src,cors)=>new Promise(r=>{
+/* ── تحميل صورة العضو: الخادم أولًا (يشتغل على كل الأجهزة) ثم بدائل ── */
+class PhotoErr extends Error{constructor(kind,msg){super(msg);this.kind=kind}}
+const PH_MSG={
+  missing:'مفيش صورة مسجّلة لطلبك على الخادم.',
+  timeout:'تحميل الصورة اتأخر (الاتصال ضعيف أو الخادم بطيء).',
+  blocked:'تعذر الوصول لملف الصورة (صلاحيات مشاركة الملف على Drive أو حظر من المتصفح/الشبكة).',
+  invalid:'ملف الصورة المسجّل تالف أو مش صورة صالحة.',
+  mismatch:'الصورة لا تطابق سجل العضو، فتم إيقاف إصدار الكارنيه حمايةً لبياناتك.'
+};
+const phErr=k=>new PhotoErr(k,PH_MSG[k]);
+const toTimeout=(p,ms)=>{let t;return Promise.race([p,new Promise((_,rj)=>{t=setTimeout(()=>rj(phErr('timeout')),ms)})]).finally(()=>clearTimeout(t))};
+const dataImg=d=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>i.naturalWidth?res(i):rej(phErr('invalid'));i.onerror=()=>rej(phErr('invalid'));i.src=d});
+const blobData=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(phErr('invalid'));r.readAsDataURL(b)});
+/* صورة صالحة = أبعاد معقولة + مش فاضية/لون واحد (صفحة خطأ أو placeholder) */
+function imgOk(i){
+  if(!i||i.naturalWidth<80||i.naturalHeight<80)return false;
+  try{const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d');g.drawImage(i,0,0,24,24);
+    const d=g.getImageData(0,0,24,24).data,n=d.length/4;let s1=0,s2=0;
+    for(let k=0;k<d.length;k+=4){const v=(d[k]+d[k+1]+d[k+2])/3;s1+=v;s2+=v*v}
+    const mu=s1/n;return s2/n-mu*mu>12;
+  }catch(e){return true} /* canvas ملوّث (بدون CORS): مش ممكن نفحص البكسلات */
+}
+const tryLoad=src=>new Promise(r=>{
   const i=new Image();let done=false;
-  const f=v=>{if(!done){done=true;clearTimeout(t);r(v)}};const t=setTimeout(()=>f(null),9000);
-  if(cors)i.crossOrigin='anonymous';i.referrerPolicy='no-referrer';
-  i.onload=()=>f(i.naturalWidth?i:null);i.onerror=()=>f(null);i.src=src;
+  const f=v=>{if(!done){done=true;clearTimeout(t);r(v)}};const t=setTimeout(()=>f('timeout'),8000);
+  i.referrerPolicy='no-referrer';i.onload=()=>f(i.naturalWidth?i:null);i.onerror=()=>f(null);i.src=src;
 });
-async function loadPhoto(url,id){
-  const c=photoCands(url,id);
-  for(const u of c){const i=await tryLoad(u,true);if(i)return i}
-  for(const u of c){const i=await tryLoad(u,false);if(i)return i}
-  return null;
+let BACKEND_PHOTO=true;
+async function photoFromServer(code){
+  if(!BACKEND_PHOTO)return null;
+  let r;
+  try{r=await toTimeout(apiGet('lookup_photo',{code}),20000)}
+  catch(e){
+    if(e instanceof PhotoErr)throw e;
+    const c=String(e&&e.code||'').toLowerCase();
+    if(c==='no_photo')throw phErr('missing');
+    if(/unknown|invalid_action|bad_action|not_supported/.test(c)){BACKEND_PHOTO=false}
+    return null;
+  }
+  if(String(r.code==null?code:r.code)!==String(code))throw phErr('mismatch');
+  const d=r.dataUrl||(r.base64?'data:'+(r.mime||'image/jpeg')+';base64,'+r.base64:'');
+  if(!d)return null;
+  const img=await dataImg(d);if(!imgOk(img))throw phErr('invalid');
+  return {img,clean:true,src:'server'};
+}
+async function photoFromUrls(m){
+  const c=photoCands(m.photoUrl,m.photoId);let timed=false,bad=false;
+  if(!c.length)return {none:true};
+  const one=async u=>{
+    const ac=new AbortController(),t=setTimeout(()=>ac.abort(),8000);
+    try{
+      const res=await fetch(u,{mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',signal:ac.signal});
+      if(!res.ok)return null;const b=await res.blob();if(!/^image\//.test(b.type))return null;
+      const i=await dataImg(await blobData(b));if(!imgOk(i)){bad=true;return null}
+      return {img:i,clean:true,src:'fetch'};
+    }catch(e){if(e&&e.name==='AbortError')timed=true;return null}
+    finally{clearTimeout(t)}
+  };
+  const rs=await Promise.all(c.map(one));const ok=rs.find(Boolean);if(ok)return ok;
+  /* آخر حل: عرض بدون CORS (الكانفس بيتلوّث: مفيش تصدير PNG لكن الكارنيه بيظهر) */
+  const ls=await Promise.all(c.map(tryLoad));
+  for(const i of ls){if(i&&i!=='timeout'&&imgOk(i))return {img:i,clean:false,src:'img'}}
+  if(ls.some(i=>i==='timeout'))timed=true;
+  return {fail:timed?'timeout':bad?'invalid':'blocked'};
+}
+const PH_CACHE=new Map();
+async function fetchMemberPhoto(m,force){
+  if(!m||!m.code||!m.name)throw phErr('mismatch');
+  const u=drvId(m.photoUrl);
+  if(u&&m.photoId&&u!==String(m.photoId))throw phErr('mismatch');
+  const key=m.code+'|'+(m.photoId||m.photoUrl||'');
+  if(!force&&PH_CACHE.has(key))return PH_CACHE.get(key);
+  let res=null,srvKind='';
+  try{res=await photoFromServer(m.code)}
+  catch(e){if(!(e instanceof PhotoErr))throw e;if(e.kind==='mismatch')throw e;srvKind=e.kind}
+  if(!res){
+    const r=await photoFromUrls(m);
+    if(r.img)res=r;
+    else if(r.none)throw phErr(srvKind==='timeout'?'timeout':srvKind==='invalid'?'invalid':'missing');
+    else throw phErr(r.fail==='timeout'||srvKind==='timeout'?'timeout':(srvKind==='invalid'||srvKind==='missing')?srvKind:r.fail);
+  }
+  PH_CACHE.set(key,res);return res;
 }
 function hydrateImg(img,cands){
   const box=img.closest('.ph');let k=0;img.referrerPolicy='no-referrer';
@@ -621,9 +706,138 @@ function receiptHTML(m){
     ${rows.map(([a,b])=>`<div class="rc-r"><span>${a}</span><b${a==='الكود الجامعي'||a==='رقم التذكرة'?' dir="ltr"':''}>${esc(b)}</b></div>`).join('')}
     <hr class="rc-hr">
     <div class="rc-st" style="color:${s[1]};border-color:${s[1]}">${s[0]}</div>
-    <div class="rc-qr">${qrSvg(m.code)}</div>
+    <div class="rc-qr">${qrSvg(FB)}</div>
     <div class="rc-ft">طُبع في ${now.toLocaleDateString('en-GB')} · ${now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}<br>ESMS © 2026</div>
   </div></div>`;
+}
+/* ═══ تنزيل الإيصال (PDF) ═══ */
+const loadImg=src=>new Promise(r=>{if(!src)return r(null);const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src});
+const RS=12; /* بكسل لكل مم = ~305dpi */
+async function drawReceipt(m){
+  const K=RS*80/302,RW=80*RS,PW=90*RS,MG=5*RS,Z=Math.round(9*K),PAD=5*RS;
+  const s=ST[m.st]||ST.review,tk=String(m.ticketNo||m.ticket||''),now=new Date();
+  const rows=[['الاسم',m.name],['الكود الجامعي',m.code],['رقم التذكرة',isLink(tk)?'':tk],['البورصة',PL(m)]].filter(r=>r[1]&&r[1]!=='—');
+  try{await Promise.all([document.fonts.load('700 40px Amiri','أ'),document.fonts.load('700 30px Cairo','أ'),document.fonts.load('800 30px Cairo','أ'),document.fonts.load('400 30px Cairo','أ')])}catch(e){}
+  const logo=await loadImg(LOGO_L);
+  const T=(g,t,x,y,f,col,al,dir,ls)=>{g.font=f;g.fillStyle=col;g.textAlign=al;g.direction=dir||'rtl';if('letterSpacing' in g)g.letterSpacing=ls||'0px';g.fillText(t,x,y);if('letterSpacing' in g)g.letterSpacing='0px'};
+  const paint=(g,draw,ox,oy)=>{
+    const L=ox+PAD,R=ox+RW-PAD,CX=ox+RW/2,IW=RW-2*PAD;let y=oy+Z+Math.round(10*K);
+    if(logo){const w=30*RS,h=w*logo.height/logo.width;if(draw)g.drawImage(logo,CX-w/2,y,w,h);y+=h+6*K}
+    y+=54;if(draw)T(g,'إيصال تسجيل',CX,y,'700 54px Amiri,serif','#14181f','center');
+    y+=Math.round(9*K)+14;if(draw)T(g,'ESMS · EGYPTIAN STOCK MARKET SIMULATION',CX,y,'400 '+Math.round(9*K)+'px Cairo,sans-serif','#6b6250','center','ltr',Math.round(.12*9*K)+'px');
+    y+=Math.round(10*K);const hr=()=>{if(draw){g.save();g.strokeStyle='#b9ab82';g.lineWidth=2*K;g.setLineDash([6*K,4*K]);g.beginPath();g.moveTo(L,y);g.lineTo(R,y);g.stroke();g.restore()}y+=Math.round(10*K)};
+    hr();
+    const FS=Math.round(12*K);
+    for(const [a,b] of rows){
+      const isLtr=a==='الكود الجامعي'||a==='رقم التذكرة',val=String(b);
+      g.font='400 '+FS+'px Cairo,sans-serif';const lw=g.measureText(a).width,avail=IW-lw-8*K;
+      let z=FS;g.font='700 '+z+'px Cairo,sans-serif';while(g.measureText(val).width>avail&&z>Math.round(8*K)){z-=2;g.font='700 '+z+'px Cairo,sans-serif'}
+      let lines=[val];
+      if(g.measureText(val).width>avail&&!isLtr){lines=[];let cur='';for(const w of val.split(' ')){const t=cur?cur+' '+w:w;if(g.measureText(t).width>avail&&cur){lines.push(cur);cur=w}else cur=t}if(cur)lines.push(cur)}
+      const lh=Math.round(z*1.5);y+=Math.round(3*K)+lh*0.78;
+      if(draw){T(g,a,R,y,'400 '+FS+'px Cairo,sans-serif','#6b6250','right');lines.forEach((t,i)=>T(g,t,L,y+i*lh,'700 '+z+'px Cairo,sans-serif','#14181f','left',isLtr?'ltr':'rtl'))}
+      y+=(lines.length-1)*lh+lh*0.22+Math.round(3*K);
+    }
+    hr();
+    const SF=Math.round(13*K)+'px';g.font='800 '+SF+' Cairo,sans-serif';const sw=g.measureText(s[0]).width+2*12*K,sh=Math.round(13*K*1.4)+2*2*K;
+    y+=Math.round(8*K);
+    if(draw){g.save();g.translate(CX,y+sh/2);g.rotate(-4*Math.PI/180);g.strokeStyle=s[1];g.lineWidth=2.5*K;
+      const x0=-sw/2,y0=-sh/2,r=8*K;g.beginPath();g.moveTo(x0+r,y0);g.arcTo(x0+sw,y0,x0+sw,y0+sh,r);g.arcTo(x0+sw,y0+sh,x0,y0+sh,r);g.arcTo(x0,y0+sh,x0,y0,r);g.arcTo(x0,y0,x0+sw,y0,r);g.closePath();g.stroke();
+      T(g,s[0],0,Math.round(13*K*0.36),'800 '+SF+' Cairo,sans-serif',s[1],'center');g.restore()}
+    y+=sh+Math.round(2*K)+Math.round(8*K);
+    const QW=22*RS;
+    if(draw&&typeof qrcode==='function'){try{const q=qrcode(0,'M');q.addData(FB);q.make();const n=q.getModuleCount(),c=QW/(n+4);
+      g.fillStyle='#fff';g.fillRect(CX-QW/2,y,QW,QW);g.fillStyle='#14181f';
+      for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))g.fillRect(CX-QW/2+(k+2)*c-.3,y+(r+2)*c-.3,c+.6,c+.6)}catch(e){}}
+    y+=QW+Math.round(2*K)+Math.round(6*K);
+    const d=now.toLocaleDateString('en-GB'),t=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),F2=Math.round(10*K),lh2=Math.round(F2*1.7);
+    y+=lh2*0.8;if(draw)T(g,'صدر في '+d+' · '+t,CX,y,'400 '+F2+'px Cairo,sans-serif','#6b6250','center');
+    y+=lh2;if(draw)T(g,'ESMS © 2026',CX,y,'400 '+F2+'px Cairo,sans-serif','#6b6250','center','ltr');
+    y+=Math.round(16*K)+Z;
+    return y-oy;
+  };
+  const sc=document.createElement('canvas').getContext('2d');
+  const RH=Math.ceil(paint(sc,false,0,0));
+  const c=document.createElement('canvas');c.width=PW;c.height=RH+2*MG;const g=c.getContext('2d');
+  g.fillStyle='#ffffff';g.fillRect(0,0,c.width,c.height);
+  const ox=MG,oy=MG,n=20;
+  g.save();g.shadowColor='rgba(0,0,0,.20)';g.shadowBlur=18;g.shadowOffsetY=5;g.fillStyle='#fbf6e9';g.beginPath();
+  for(let i=0;i<=n*2;i++){const x=ox+i*RW/(n*2),y=oy+(i%2?0:Z);i?g.lineTo(x,y):g.moveTo(x,y)}
+  for(let i=n*2;i>=0;i--){const x=ox+i*RW/(n*2),y=oy+(i%2?RH:RH-Z);g.lineTo(x,y)}
+  g.closePath();g.fill();g.restore();
+  paint(g,true,ox,oy);
+  return c;
+}
+function makePdf(jpg,pw,ph,ptW,ptH){
+  const enc=s=>{const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i)&255;return u};
+  const chunks=[],off=[];let n=0;const add=u=>{chunks.push(u);n+=u.length};
+  const O=(i,body)=>{off[i]=n;add(enc(i+' 0 obj\n'));(Array.isArray(body)?body:[body]).forEach(b=>add(typeof b==='string'?enc(b):b));add(enc('\nendobj\n'))};
+  const f=x=>x.toFixed(3),content='q '+f(ptW)+' 0 0 '+f(ptH)+' 0 0 cm /Im0 Do Q';
+  add(enc('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'));
+  O(1,'<< /Type /Catalog /Pages 2 0 R >>');
+  O(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  O(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+f(ptW)+' '+f(ptH)+'] /Resources << /XObject << /Im0 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>');
+  O(4,['<< /Type /XObject /Subtype /Image /Width '+pw+' /Height '+ph+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpg.length+' >>\nstream\n',jpg,'\nendstream']);
+  O(5,'<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream');
+  O(6,'<< /Title (ESMS Receipt) /Producer (ESMS) >>');
+  const x=n;let t='xref\n0 7\n0000000000 65535 f \n';for(let i=1;i<=6;i++)t+=String(off[i]).padStart(10,'0')+' 00000 n \n';
+  add(enc(t+'trailer\n<< /Size 7 /Root 1 0 R /Info 6 0 R >>\nstartxref\n'+x+'\n%%EOF'));
+  return new Blob(chunks,{type:'application/pdf'});
+}
+const blobBuf=b=>b.arrayBuffer?b.arrayBuffer():new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsArrayBuffer(b)});
+function saveBlob(blob,name){
+  const u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u;a.download=name;a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),120000);return u;
+}
+let toastT;
+function toast(msg,kind,href){
+  const t=$('toast');t.className='show '+(kind||'ok');
+  t.innerHTML=esc(msg)+(href?' <a href="'+href+'" target="_blank" rel="noopener">فتح الملف</a>':'');
+  clearTimeout(toastT);toastT=setTimeout(()=>{t.className=''},href?12000:6000);
+}
+async function receiptMember(m){
+  try{const r=await toTimeout(apiGet('lookup',{code:m.code}),6000);
+    if(r&&r.found)return {...m,name:r.name||m.name,st:r.status||m.st||'review',ticket:r.ticket||m.ticket||'',ticketNo:'',present:r.present||r.Present||m.present}}catch(e){}
+  return m;
+}
+let dlBusy=false;
+async function downloadReceipt(m,btn,fresh){
+  if(dlBusy||!m)return;dlBusy=true;const old=btn&&btn.innerHTML;
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin g"></span>جاري تجهيز الإيصال…'}
+  try{
+    const mm=fresh?await receiptMember(m):m;
+    const cv=await drawReceipt(mm);
+    const jb=await new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('تعذر تحويل الإيصال لصورة')),'image/jpeg',.95));
+    const u8=new Uint8Array(await blobBuf(jb));
+    const pdf=makePdf(u8,cv.width,cv.height,cv.width/RS*72/25.4,cv.height/RS*72/25.4);
+    const name='ESMS-receipt-'+String(mm.code).replace(/[^\w-]/g,'')+'.pdf';
+    const url=saveBlob(pdf,name);
+    toast('تم تجهيز الإيصال وتنزيله ('+name+'). لو ماظهرش في التنزيلات اضغط:','ok',url);
+  }catch(e){toast('تعذر إنشاء أو تنزيل الإيصال: '+((e&&e.message)||'خطأ غير معروف')+' — جرّب تاني.','bad')}
+  finally{dlBusy=false;if(btn){btn.disabled=false;btn.innerHTML=old}}
+}
+
+/* ═══ الرجوع وحفظ الطلب ═══ */
+const LS={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}},del(k){try{localStorage.removeItem(k)}catch{}}};
+let regM=null,submitted=false;
+function saveReg(){LS.set('esms_last',JSON.stringify(regM))}
+function loadReg(){try{const j=JSON.parse(LS.get('esms_last')||'null');if(j&&j.code&&j.name)return j}catch{}return null}
+function updateBanner(){
+  const b=$('rb');
+  if(!regM||$('done').classList.contains('show')){b.hidden=true;b.innerHTML='';return}
+  b.hidden=false;
+  b.innerHTML='<div>طلبك مسجّل بالكود <b dir="ltr">'+esc(regM.code)+'</b></div><div class="acts"><button class="btn sm" id="rbShow" type="button">'+ico('dl')+'عرض الإيصال</button><button class="btn sec sm" id="rbNew" type="button">'+ico('adduser')+'تسجيل عضو آخر</button></div>';
+  $('rbShow').onclick=showDone;$('rbNew').onclick=()=>again();
+}
+function showDone(){
+  if(!regM)return;lastTk=regM.code;$('tkt').textContent=regM.code;
+  $('f').style.display='none';$('pbar').style.display='none';$('done').classList.add('show');updateBanner();scrollTo({top:0,behavior:'smooth'});
+}
+function showForm(){
+  $('done').classList.remove('show');$('f').style.display='';$('pbar').style.display='';
+  if(submitted){const b=$('go');b.disabled=true;b.innerHTML=ico('check')+'تم إرسال هذا الطلب'}
+  updateBanner();scrollTo({top:0,behavior:'smooth'});
 }
 function buildPrint(m,cv){
   const A=$('printArea');A.innerHTML='';
@@ -641,7 +855,6 @@ async function sendToPrinter(m,cv){
     window.print();
   });
 }
-const NOPHOTO='تعذر تحميل صورة العضو، لذلك لم يتم إصدار الكارنيه. تأكد من صلاحية مشاركة الصورة ثم أعد المحاولة. سيتم طباعة الإيصال فقط.';
 let printing=false;
 async function printMember(code,btn){
   if(printing)return;const m=db.find(x=>x.code===code);if(!m)return;
@@ -649,33 +862,39 @@ async function printMember(code,btn){
   try{
     let cv=null;
     if(m.st==='accepted'){
-      const img=await loadPhoto(m.photoUrl,m.photoId);
-      if(img)cv=await drawCard(m,img);else alert(NOPHOTO);
+      try{const ph=await fetchMemberPhoto(m);cv=await drawCard(m,ph.img)}
+      catch(e){alert((e.message||PH_MSG.blocked)+'\nحالة العضو لم تتغير (لسه مقبول). سيتم طباعة الإيصال فقط.')}
     }
     await sendToPrinter(m,cv);
   }catch(e){alert('تعذر تجهيز الطباعة: '+(e.message||e))}
   finally{printing=false;if(btn){btn.disabled=false;btn.innerHTML=old}}
 }
-async function printLookup(){
-  if(printing||!lkM)return;printing=true;const b=$('lprint'),old=b.innerHTML;b.disabled=true;b.innerHTML='<span class="spin g"></span>جاري التجهيز…';
-  try{
-    if(lkM.st==='accepted'&&!cardCv)alert(NOPHOTO);
-    await sendToPrinter(lkM,lkM.st==='accepted'?cardCv:null);
-  }catch(e){alert('تعذر تجهيز الطباعة')}
-  finally{printing=false;b.disabled=false;b.innerHTML=old}
-}
-function showCardBox(m){
+let lkTok=0;
+function cardBoxSet(state,m,err){
   const b=$('cardbox');
-  if(m.st!=='accepted'){b.style.display='none';b.innerHTML='';return}
-  b.innerHTML='<h3>كارنيه العضوية</h3>';b.style.display='block';
-  if(!cardCv){
-    b.insertAdjacentHTML('beforeend','<p class="cerr">تعذر تحميل صورتك لإصدار الكارنيه. تأكد من الاتصال ثم أعد الاستعلام.</p>');return;
+  if(!m||m.st!=='accepted'||state==='none'){b.style.display='none';b.innerHTML='';return}
+  b.style.display='block';b.innerHTML='<h3>كارنيه العضوية</h3>';
+  if(state==='loading'){b.insertAdjacentHTML('beforeend','<p class="cld"><span class="spin g"></span>جاري تحميل صورتك وتجهيز الكارنيه…</p>');return}
+  if(state==='err'){
+    const k=err&&err.kind,msg=(err&&err.message)||'تعذر تجهيز الكارنيه.';
+    b.insertAdjacentHTML('beforeend','<p class="cerr">'+esc(msg)+'<br><small>حالة طلبك لسه «مقبول» ومتغيّرتش — المشكلة في تحميل الصورة فقط.</small></p>'+((k==='missing'||k==='mismatch')?'<p class="rf" style="font-size:.8rem;color:var(--mut)">تواصل مع الإدارة لتصحيح الصورة المسجّلة.</p>':'<button class="btn sm" id="cretry" type="button">'+ico('refresh')+'إعادة المحاولة</button>'));
+    const r=$('cretry');if(r)r.onclick=()=>buildCard(m,true);return;
   }
   let node;cardUrl='';
   try{cardUrl=cardCv.toDataURL('image/png');node=document.createElement('img');node.src=cardUrl;node.alt='الكارنيه';node.style.cursor='zoom-in';node.onclick=zoomCard}
   catch(e){node=cardCv}
   node.className='cardimg';b.appendChild(node);
   b.insertAdjacentHTML('beforeend','<p class="rf" style="font-size:.78rem;color:var(--mut);margin:8px 0 0">'+(cardUrl?'اضغط على الكارنيه للتكبير والحفظ كصورة':'')+'</p>');
+  $('lcard').style.display=cardUrl?'':'none';
+}
+async function buildCard(m,force){
+  const tok=lkTok;cardCv=null;cardUrl='';$('lcard').style.display='none';
+  cardBoxSet('loading',m);
+  try{
+    const ph=await fetchMemberPhoto(m,force);if(tok!==lkTok)return;
+    const cv=await drawCard(m,ph.img);if(tok!==lkTok)return;
+    cardCv=cv;cardBoxSet('ok',m);
+  }catch(e){if(tok!==lkTok)return;cardCv=null;cardBoxSet('err',m,e instanceof PhotoErr?e:new PhotoErr('blocked','تعذر تجهيز الكارنيه: '+(e&&e.message||'خطأ غير معروف')))}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -718,6 +937,12 @@ $('lbd').innerHTML=ico('dl')+'حفظ الصورة';
 $('bref').innerHTML=ico('refresh')+'تحديث';
 $('bAgain').onclick=()=>again();
 $('bPrint').onclick=()=>printNow();
+$('bRcpt').innerHTML=ico('dl')+'تنزيل الإيصال';
+$('bBack').innerHTML=ico('back')+'رجوع';
+$('bRcpt').onclick=()=>downloadReceipt(regM,$('bRcpt'),true);
+$('bBack').onclick=()=>showForm();
+$('lcard').innerHTML=ico('dl')+'تنزيل الكارنيه';
+$('lback').innerHTML=ico('back')+'رجوع للصفحة الرئيسية';
 $('lgo').innerHTML=ico('track')+'استعلم';
 $('lcopy').innerHTML=ico('copy')+'نسخ الرقم';
 $('lnew').innerHTML=ico('track')+'استعلام جديد';
@@ -788,6 +1013,7 @@ $('pdf').onchange=e=>{
   r.onerror=()=>bad('تعذر قراءة الملف');r.readAsDataURL(f);
 };
 $('go').onclick=async e=>{
+  if(submitted){showDone();return}
   if(cfg.registrationOpen===false){alert('التسجيل مغلق حاليًا');return}
   const b=$('go'),v=val();let first='';
   {const r=b.getBoundingClientRect(),s=document.createElement('span');s.className='rip';const z=Math.max(r.width,r.height)/3;s.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;b.appendChild(s);setTimeout(()=>s.remove(),700)}
@@ -799,14 +1025,16 @@ $('go').onclick=async e=>{
     await apiPost({action:'register',name:v.name,code:v.code,phone:v.phone,nid:v.nid,
       present,pdf:pdfData,photo:photoData,ext});
     lastTk=v.code;$('tkt').textContent=lastTk;
-    $('f').style.display='none';$('pf').style.width='100%';$('pt').textContent='100%';$('pbar').style.display='none';
-    $('done').classList.add('show');boom();scrollTo({top:0,behavior:'smooth'});
+    submitted=true;regM={code:v.code,name:v.name,present,st:'review',ticket:'',ticketNo:''};saveReg();
+    $('pf').style.width='100%';$('pt').textContent='100%';
+    showDone();boom();
   }catch(err){
     b.disabled=false;b.innerHTML=ico('send')+'إرسال التسجيل';
     alert(err.message||'تعذر حفظ البيانات');
   }
 };
 function again(){
+  submitted=false;regM=null;LS.del('esms_last');$('rb').hidden=true;$('rb').innerHTML='';
   $('f').reset();photoData='';photoFile=null;present='';pdfData='';pdfFile=null;
   $('pdt').textContent='اختر ملف PDF';$('pdm').textContent='PDF فقط، حتى 10MB';
   $('av').style.backgroundImage='';$('av').classList.remove('has');$('pbt').textContent='اختر صورة';
@@ -835,8 +1063,8 @@ let lkM=null,cardCv=null,cardUrl='';
 const PT=['calc(-100% + 2px)','-91%','-91%','-81%','-81%','-70%','-70%','-58%','-58%','-45%','-45%','-32%','-32%','-20%','-20%','-10%','-10%','-3%','-3%','0%'];
 const PTm=[0,.075,.105,.18,.21,.285,.315,.39,.42,.495,.525,.6,.63,.705,.735,.81,.84,.915,.945,1];
 function resetPaper(){
-  if(anim){anim.cancel();anim=null}
-  const o=$('out');o.style.height='0px';o.classList.remove('on');$('cardbox').style.display='none';$('pw').style.transform='';$('lacts').classList.remove('on');
+  lkTok++;if(anim){anim.cancel();anim=null}
+  const o=$('out');o.style.height='0px';o.classList.remove('on');$('cardbox').style.display='none';$('cardbox').innerHTML='';$('lcard').style.display='none';cardCv=null;cardUrl='';$('pw').style.transform='';$('lacts').classList.remove('on');
 }
 function feed(){return new Promise(res=>{
   const o=$('out'),pw=$('pw');o.classList.add('on');o.style.height=(pw.offsetHeight+28)+'px';
@@ -857,13 +1085,13 @@ async function lookup(){
     const m={code:r.code,name:r.name,st:r.status||'review',ticket:r.ticket||'',
       photo:photoSrc(r.photo,''),photoUrl:r.photo||'',photoId:r.photoId||r.PhotoID||'',present:r.present||r.Present||'',pdf:r.pdfUrl||r.pdf||''};
     curTk=m.ticket;lkM=m;cardCv=null;cardUrl='';
-    if(m.st==='accepted'){const img=await loadPhoto(m.photoUrl,m.photoId);if(img)cardCv=await drawCard(m,img)}
     fillPaper(m);
     await Promise.all([...$('paper').querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
     setSt('print','بنجهّز حالة طلبك…');
     await feed();
     setSt('done','دي حالة طلبك دلوقتي');
-    showCardBox(m);$('lprint').innerHTML=ico('print')+(m.st==='accepted'?'طباعة الكارنيه والإيصال':'طباعة الإيصال');
+    $('lprint').innerHTML=ico('dl')+'تنزيل الإيصال';
+    if(m.st==='accepted')buildCard(m);else cardBoxSet('none',m);
     const cp=!!curTk&&!isLink(curTk);$('lcopy').style.display=cp?'':'none';$('lnew').style.gridColumn=cp?'':'1/-1';
     const tl=m.st==='accepted'?(isLink(m.ticket)?m.ticket:isLink(m.pdf)?m.pdf:''):'';
     const k=$('ltk');k.style.display=tl?'':'none';k.innerHTML=ico('ticket')+'فتح التذكرة';
@@ -888,7 +1116,9 @@ function zoomCard(){
   if(!cardUrl||!lkM)return;const im=$('lbi');im.onerror=null;im.onload=null;im.src=cardUrl;$('lbn').textContent=lkM.name;$('lbm').textContent='اضغط حفظ لتحميل الكارنيه كصورة';
   const dd=$('lbd');dd.innerHTML=ico('dl')+'حفظ الكارنيه';dd.href=cardUrl;dd.download='ESMS-card-'+lkM.code+'.png';$('lb').classList.add('show');
 }
-$('lprint').onclick=()=>printLookup();
+$('lprint').onclick=()=>downloadReceipt(lkM,$('lprint'),false);
+$('lcard').onclick=()=>{if(cardUrl&&lkM){const a=document.createElement('a');a.href=cardUrl;a.download='ESMS-card-'+String(lkM.code).replace(/[^\w-]/g,'')+'.png';document.body.appendChild(a);a.click();a.remove();toast('تم تنزيل الكارنيه','ok')}else toast('الكارنيه مش جاهز للتنزيل — اضغط مطولًا على الصورة لحفظها.','bad')};
+$('lback').onclick=()=>{updateBanner();scrollTo({top:0,behavior:'smooth'})};
 $('lgo').onclick=lookup;
 $('lq').onkeydown=e=>{if(e.key==='Enter')lookup()};
 $('lcopy').onclick=async()=>{if(!curTk)return;try{await navigator.clipboard.writeText(curTk);$('lcopy').innerHTML=ico('check')+'تم النسخ';setTimeout(()=>$('lcopy').innerHTML=ico('copy')+'نسخ الرقم',1500)}catch{}};
@@ -1152,6 +1382,7 @@ let _tk=false;addEventListener('scroll',()=>{if(!_tk){_tk=true;requestAnimationF
    ═══════════════════════════════════════════════════════════════ */
 setSt('idle','جاهز للاستعلام');
 prog();
+regM=loadReg();updateBanner();
 
 (async()=>{
   try{
