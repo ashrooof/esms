@@ -773,15 +773,12 @@ async function drawCard(m,phImg){
  g.restore();
  g.strokeStyle=gg(0,0,W,H);g.lineWidth=10;rr(6,6,W-12,H-12,66);g.stroke();
  if(logo){const s=Math.min(230/logo.width,200/logo.height);g.drawImage(logo,150,105,logo.width*s,logo.height*s)}
- g.fillStyle='rgba(20,24,31,.35)';g.fillRect(398,125,2,175);
- T('EGYPTIAN STOCK MARKET',428,165,'600 30px Cairo,sans-serif',INK,'left','5px');T('SIMULATION',428,200,'600 30px Cairo,sans-serif',INK,'left','5px');
- T('نموذج محاكاة البورصة المصرية',428,246,'700 38px Cairo,sans-serif',INK);
- T('OFFICIAL MEMBER',1575,112,'700 28px Cairo,sans-serif',GD,'right','9px');T('بطاقة عضوية رسمية',1575,160,'700 36px Cairo,sans-serif',GD,'right');
+  T('OFFICIAL MEMBER',1575,112,'700 28px Cairo,sans-serif',GD,'right','9px');T('بطاقة عضوية رسمية',1575,160,'700 36px Cairo,sans-serif',GD,'right');
  g.fillStyle=GO;g.fillRect(1480,180,95,2);
  T('MEMBER NAME',180,364,'600 22px Cairo,sans-serif',GD,'left','5px');
  const nf=fit(m.name,z=>`700 ${z}px Amiri,serif`,840,96,42);T(m.name,180,462,`700 ${nf}px Amiri,serif`,INK);
  g.fillStyle=GO;g.fillRect(180,520,225,2);
- const cols=[[180,'رقم التذكرة','TICKET NO.',tk,330],[565,'الكود الجامعي','UNIVERSITY CODE',m.code,300],[900,'البورصة','STOCK MARKET',PL(m),190]];
+ const cols=[[180,'رقم التذكرة','TICKET NO.',tk,400],[700,'الكود الجامعي','UNIVERSITY CODE',m.code,400]];
  cols.forEach(([x,ar,en,v,w],i)=>{if(i){g.fillStyle='rgba(20,24,31,.3)';g.fillRect(x-32,565,2,110)}
   T(ar,x,596,'700 27px Cairo,sans-serif',GD);T(en,x,628,'600 19px Cairo,sans-serif',GD,'left','3px');
   const z=fit(v,s=>`700 ${s}px Cairo,sans-serif`,w,46,22);T(v,x,684,`700 ${z}px Cairo,sans-serif`,INK)});
@@ -811,7 +808,10 @@ const PH_MSG={
   timeout:'تحميل الصورة اتأخر (الاتصال ضعيف أو الخادم بطيء).',
   blocked:'تعذر الوصول لملف الصورة (صلاحيات مشاركة الملف على Drive أو حظر من المتصفح/الشبكة).',
   invalid:'ملف الصورة المسجّل تالف أو مش صورة صالحة.',
-  mismatch:'الصورة لا تطابق سجل العضو، فتم إيقاف إصدار الكارنيه حمايةً لبياناتك.'
+  mismatch:'الصورة لا تطابق سجل العضو، فتم إيقاف إصدار الكارنيه حمايةً لبياناتك.',
+  server:'الخادم المنشور لا يسلّم صورة الكارنيه (نسخة Code.gs المنشورة قديمة). الإدارة تحتاج إعادة نشر الخادم كنسخة جديدة.',
+  notaccepted:'الكارنيه متاح للأعضاء المقبولين فقط.',
+  closed:'الاستعلام غير متاح حاليًا، حاول لاحقًا.'
 };
 const phErr=k=>new PhotoErr(k,PH_MSG[k]);
 const toTimeout=(p,ms)=>{let t;return Promise.race([p,new Promise((_,rj)=>{t=setTimeout(()=>rj(phErr('timeout')),ms)})]).finally(()=>clearTimeout(t))};
@@ -831,24 +831,31 @@ const tryLoad=src=>new Promise(r=>{
   const f=v=>{if(!done){done=true;clearTimeout(t);r(v)}};const t=setTimeout(()=>f('timeout'),8000);
   i.referrerPolicy='no-referrer';i.onload=()=>f(i.naturalWidth?i:null);i.onerror=()=>f(null);i.src=src;
 });
-let BACKEND_PHOTO=true;
 async function photoFromServer(code){
-  if(!BACKEND_PHOTO)return null;
-  let r;
-  try{r=await toTimeout(apiGet('lookup_photo',{code}),45000)}
-  catch(e){
-    if(e instanceof PhotoErr)throw e;
-    const c=String(e&&e.code||'').toLowerCase();
-    if(c==='no_photo')throw phErr('missing');
-    if(/unknown|invalid_action|bad_action|not_supported/.test(c)){BACKEND_PHOTO=false}
-    return null;
+  /* الخادم هو المصدر الموثوق: بيرجّع base64 فنرسم كانفس «نظيف» قابل للتصدير PNG */
+  let lastNet=null;
+  for(let attempt=0;attempt<2;attempt++){
+    let r;
+    try{r=await toTimeout(apiGet('lookup_photo',{code}),45000)}
+    catch(e){
+      if(e instanceof PhotoErr){lastNet=e;continue}
+      const c=String(e&&e.code||'').toLowerCase();
+      if(c==='no_photo')throw phErr('missing');
+      if(c==='not_accepted')throw phErr('notaccepted');
+      if(c==='lookup_closed')throw phErr('closed');
+      if(c==='photo_read_failed')throw phErr(/غير مدعوم/.test(e.message||'')?'invalid':'blocked');
+      if(c==='network'||c==='bad_response'){lastNet=phErr('timeout');continue}
+      throw phErr('blocked');
+    }
+    if(String(r.code==null?code:r.code).trim()!==String(code).trim())throw phErr('mismatch');
+    const d=r.dataUrl||(r.base64?'data:'+(r.mime||'image/jpeg')+';base64,'+r.base64:'');
+    if(!d)throw phErr('server'); /* رد ناجح بلا صورة = نشر قديم لا يعرف lookup_photo */
+    const img=await dataImg(d);if(!imgOk(img))throw phErr('invalid');
+    return {img,clean:true,src:'server'};
   }
-  if(String(r.code==null?code:r.code)!==String(code))throw phErr('mismatch');
-  const d=r.dataUrl||(r.base64?'data:'+(r.mime||'image/jpeg')+';base64,'+r.base64:'');
-  if(!d)return null;
-  const img=await dataImg(d);if(!imgOk(img))throw phErr('invalid');
-  return {img,clean:true,src:'server'};
+  throw lastNet||phErr('timeout');
 }
+/* بديل: تنزيل الصورة عبر fetch (CORS). لا نقبل صورة بدون CORS لأنها تلوّث الكانفس فيفشل تصدير PNG */
 async function photoFromUrls(m){
   const c=photoCands(m.photoUrl,m.photoId);let timed=false,bad=false;
   if(!c.length)return {none:true};
@@ -863,10 +870,6 @@ async function photoFromUrls(m){
     finally{clearTimeout(t)}
   };
   const rs=await Promise.all(c.map(one));const ok=rs.find(Boolean);if(ok)return ok;
-  /* آخر حل: عرض بدون CORS (الكانفس بيتلوّث: مفيش تصدير PNG لكن الكارنيه بيظهر) */
-  const ls=await Promise.all(c.map(tryLoad));
-  for(const i of ls){if(i&&i!=='timeout'&&imgOk(i))return {img:i,clean:false,src:'img'}}
-  if(ls.some(i=>i==='timeout'))timed=true;
   return {fail:timed?'timeout':bad?'invalid':'blocked'};
 }
 const PH_CACHE=new Map();
@@ -876,14 +879,17 @@ async function fetchMemberPhoto(m,force){
   if(u&&m.photoId&&u!==String(m.photoId))throw phErr('mismatch');
   const key=m.code+'|'+(m.photoId||m.photoUrl||'');
   if(!force&&PH_CACHE.has(key))return PH_CACHE.get(key);
-  let res=null,srvKind='';
+  let res=null,srvErr=null;
   try{res=await photoFromServer(m.code)}
-  catch(e){if(!(e instanceof PhotoErr))throw e;if(e.kind==='mismatch')throw e;srvKind=e.kind}
+  catch(e){
+    if(!(e instanceof PhotoErr))throw e;
+    if(['mismatch','notaccepted','closed'].includes(e.kind))throw e;
+    srvErr=e;
+  }
   if(!res){
     const r=await photoFromUrls(m);
     if(r.img)res=r;
-    else if(r.none)throw phErr(srvKind==='timeout'?'timeout':srvKind==='invalid'?'invalid':'missing');
-    else throw phErr(r.fail==='timeout'||srvKind==='timeout'?'timeout':(srvKind==='invalid'||srvKind==='missing')?srvKind:r.fail);
+    else throw srvErr||(r.none?phErr('missing'):phErr(r.fail));
   }
   PH_CACHE.set(key,res);return res;
 }
@@ -907,10 +913,10 @@ function zigPoly(n,d){
 }
 function receiptHTML(m){
   const s=ST[m.st]||ST.review,tk=String(m.ticketNo||m.ticket||''),now=new Date();
-  const rows=[['الاسم',m.name],['الكود الجامعي',m.code],['رقم التذكرة',isLink(tk)?'':tk],['البورصة',PL(m)]].filter(r=>r[1]&&r[1]!=='—');
+  const rows=[['الاسم',m.name],['الكود الجامعي',m.code],['رقم التذكرة',isLink(tk)?'':tk]].filter(r=>r[1]&&r[1]!=='—');
   return `<div class="rcpt" style="clip-path:${zigPoly(20,9)}"><div class="rc-in">
     <img class="rc-logo" src="${LOGO_L}" alt="">
-    <div class="rc-t">إيصال تسجيل</div><div class="rc-s">ESMS · EGYPTIAN STOCK MARKET SIMULATION</div>
+    <div class="rc-t">إيصال تسجيل</div>
     <hr class="rc-hr">
     ${rows.map(([a,b])=>`<div class="rc-r"><span>${a}</span><b${a==='الكود الجامعي'||a==='رقم التذكرة'?' dir="ltr"':''}>${esc(b)}</b></div>`).join('')}
     <hr class="rc-hr">
@@ -925,7 +931,7 @@ const RS=12; /* بكسل لكل مم = ~305dpi */
 async function drawReceipt(m){
   const K=RS*80/302,RW=80*RS,PW=90*RS,MG=5*RS,Z=Math.round(9*K),PAD=5*RS;
   const s=ST[m.st]||ST.review,tk=String(m.ticketNo||m.ticket||''),now=new Date();
-  const rows=[['الاسم',m.name],['الكود الجامعي',m.code],['رقم التذكرة',isLink(tk)?'':tk],['البورصة',PL(m)]].filter(r=>r[1]&&r[1]!=='—');
+  const rows=[['الاسم',m.name],['الكود الجامعي',m.code],['رقم التذكرة',isLink(tk)?'':tk]].filter(r=>r[1]&&r[1]!=='—');
   await ensureFonts(rows.map(r=>r[1]).join(' '));
   if(typeof qrcode!=='function')throw new Error('مكتبة رمز QR لم تُحمَّل');
   const logo=await loadImg(LOGO_L);
@@ -935,8 +941,7 @@ async function drawReceipt(m){
     const L=ox+PAD,R=ox+RW-PAD,CX=ox+RW/2,IW=RW-2*PAD;let y=oy+Z+Math.round(10*K);
     if(logo){const w=30*RS,h=w*logo.height/logo.width;if(draw)g.drawImage(logo,CX-w/2,y,w,h);y+=h+6*K}
     y+=54;if(draw)T(g,'إيصال تسجيل',CX,y,'700 54px Amiri,serif','#14181f','center');
-    y+=Math.round(9*K)+14;if(draw)T(g,'ESMS · EGYPTIAN STOCK MARKET SIMULATION',CX,y,'400 '+Math.round(9*K)+'px Cairo,sans-serif','#6b6250','center','ltr',Math.round(.12*9*K)+'px');
-    y+=Math.round(10*K);const hr=()=>{if(draw){g.save();g.strokeStyle='#b9ab82';g.lineWidth=2*K;g.setLineDash([6*K,4*K]);g.beginPath();g.moveTo(L,y);g.lineTo(R,y);g.stroke();g.restore()}y+=Math.round(10*K)};
+    y+=Math.round(12*K);const hr=()=>{if(draw){g.save();g.strokeStyle='#b9ab82';g.lineWidth=2*K;g.setLineDash([6*K,4*K]);g.beginPath();g.moveTo(L,y);g.lineTo(R,y);g.stroke();g.restore()}y+=Math.round(10*K)};
     hr();
     const FS=Math.round(12*K);
     for(const [a,b] of rows){
@@ -1062,7 +1067,7 @@ async function printMember(code,btn){
   }catch(e){alert('تعذر تجهيز الطباعة: '+(e.message||e))}
   finally{printing=false;if(btn){btn.disabled=false;btn.innerHTML=old}}
 }
-let lkTok=0;
+let lkTok=0,cardErrMsg='';
 function cardBoxSet(state,m,err){
   const b=$('cardbox');
   if(!m||m.st!=='accepted'||state==='none'){b.style.display='none';b.innerHTML='';return}
@@ -1070,7 +1075,7 @@ function cardBoxSet(state,m,err){
   if(state==='loading'){b.insertAdjacentHTML('beforeend','<p class="cld"><span class="spin g"></span>جاري تحميل صورتك وتجهيز الكارنيه…</p>');return}
   if(state==='err'){
     const k=err&&err.kind,msg=(err&&err.message)||'تعذر تجهيز الكارنيه.';
-    b.insertAdjacentHTML('beforeend','<p class="cerr">'+esc(msg)+'<br><small>حالة طلبك لسه «مقبول» ومتغيّرتش — المشكلة في تحميل الصورة فقط.</small></p>'+((k==='missing'||k==='mismatch')?'<p class="rf" style="font-size:.8rem;color:var(--mut)">تواصل مع الإدارة لتصحيح الصورة المسجّلة.</p>':'<button class="btn sm" id="cretry" type="button">'+ico('refresh')+'إعادة المحاولة</button>'));
+    b.insertAdjacentHTML('beforeend','<p class="cerr">'+esc(msg)+'<br><small>حالة طلبك لسه «مقبول» ومتغيّرتش — المشكلة في تحميل الصورة فقط.</small></p>'+((k==='missing'||k==='mismatch'||k==='notaccepted'||k==='server')?'<p class="rf" style="font-size:.8rem;color:var(--mut)">تواصل مع الإدارة لتصحيح الصورة المسجّلة.</p>':'<button class="btn sm" id="cretry" type="button">'+ico('refresh')+'إعادة المحاولة</button>'));
     const r=$('cretry');if(r)r.onclick=()=>buildCard(m,true);return;
   }
   let node;cardUrl='';
@@ -1080,13 +1085,13 @@ function cardBoxSet(state,m,err){
   b.insertAdjacentHTML('beforeend','<p class="rf" style="font-size:.78rem;color:var(--mut);margin:8px 0 0">'+(cardUrl?'اضغط على الكارنيه للتكبير والحفظ كصورة':'')+'</p>');
 }
 async function buildCard(m,force){
-  const tok=lkTok;cardCv=null;cardUrl='';
+  const tok=lkTok;cardCv=null;cardUrl='';cardErrMsg='';
   cardBoxSet('loading',m);
   try{
     const ph=await fetchMemberPhoto(m,force);if(tok!==lkTok)return;
     const cv=await drawCard(m,ph.img);if(tok!==lkTok)return;
     cardCv=cv;cardBoxSet('ok',m);
-  }catch(e){if(tok!==lkTok)return;cardCv=null;cardBoxSet('err',m,e instanceof PhotoErr?e:new PhotoErr('blocked','تعذر تجهيز الكارنيه: '+(e&&e.message||'خطأ غير معروف')));clientEvent('card_failed',m.code,e instanceof PhotoErr?e.kind:'other')}
+  }catch(e){if(tok!==lkTok)return;cardCv=null;const pe=e instanceof PhotoErr?e:new PhotoErr('blocked','تعذر تجهيز الكارنيه: '+(e&&e.message||'خطأ غير معروف'));cardErrMsg=pe.message;cardBoxSet('err',m,pe);clientEvent('card_failed',m.code,e instanceof PhotoErr?e.kind:'other')}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1278,7 +1283,7 @@ async function lookup(){
   try{
     const r=await apiGet('lookup',{code:raw,src:'web',rid:Date.now().toString(36)+Math.random().toString(36).slice(2,10)});
     if(!r.found){setSt('nf',r.message||'مفيش طلب مسجل بالكود ده');return}
-    const m={code:r.code,name:r.name,st:r.status||'review',ticket:r.ticket||'',
+    const m={code:String(r.code==null?'':r.code).trim(),name:r.name,st:r.status||'review',ticket:r.ticket||'',
       photo:photoSrc(r.photo,''),photoUrl:r.photo||'',photoId:r.photoId||r.PhotoID||'',present:r.present||r.Present||'',pdf:r.pdfUrl||r.pdf||''};
     curTk=m.ticket;lkM=m;cardCv=null;cardUrl='';
     fillPaper(m);
@@ -1319,11 +1324,13 @@ $('lcard').onclick=async()=>{
   try{
     if(!cardCv&&cardP)await cardP;
     if(!cardCv)await buildCard(m,true);
+    if(!cardCv&&m===lkM&&cardErrMsg){toast(cardErrMsg,'bad');return}
     if(!cardCv||m!==lkM)throw new Error('card');
-    const blob=await new Promise((res,rej)=>cardCv.toBlob(x=>x?res(x):rej(new Error('blob')),'image/png'));
+    const blob=await new Promise((res,rej)=>{try{cardCv.toBlob(x=>x?res(x):rej(new Error('blob')),'image/png')}catch(er){rej(er)}});
     if(!blob||blob.size<5000)throw new Error('small');
     saveBlob(blob,'ESMS-card-'+String(m.code).replace(/[^\w-]/g,'')+'.png');
-  }catch(e){toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad')}
+    clientEvent('card_downloaded',m.code);
+  }catch(e){toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad');clientEvent('card_failed',m.code,'other')}
   finally{cardDl=false;b.disabled=false;b.innerHTML=old}
 };
 $('lback').onclick=()=>{updateBanner();scrollTo({top:0,behavior:'smooth'})};
@@ -1385,14 +1392,14 @@ async function loadAll(silent){
   const same=sig===lastSig;lastSig=sig;
   try{const c=await apiGet('get_settings',auth());cfg={...cfg,...c.settings}}catch{}
   try{const l=await apiGet('get_log',auth());
-    lgArr=(l.log||[]).map(x=>({t:Date.parse(x.t)||Date.now(),k:x.k,d:x.d,a:x.actor||'ESMS'}));
+    lgArr=(l.log||[]).filter(x=>x.k!=='lookup'&&x.k!=='lookup_nf').map(x=>({t:Date.parse(x.t)||Date.now(),k:x.k,d:x.d,a:x.actor||'ESMS'}));
   }catch{lgArr=[]}
   if($('dash').classList.contains('show')&&!(silent&&same))render();
 }
 $('bref').onclick=async()=>{const b=$('bref');b.disabled=true;try{await loadAll()}catch(e){alert(e.message||'تعذر التحديث')}finally{b.disabled=false}};
 function openDash(){$('dash').classList.add('show');render();startPoll()}
 let pollT=null;
-function startPoll(){stopPoll();pollT=setInterval(async()=>{if(!ADMIN_TOKEN||document.hidden)return;try{await loadAll(true)}catch{}},60000)}
+function startPoll(){stopPoll();pollT=setInterval(async()=>{if(!ADMIN_TOKEN||document.hidden)return;try{await loadAll(true)}catch{}if($('qld').open&&QL.loaded&&!QL.busy&&QL.rows.length<=50)qlLoad(true)},60000)}
 function stopPoll(){if(pollT){clearInterval(pollT);pollT=null}}
 async function closeDash(){
   const b=$('bout');if(b)b.disabled=true;
@@ -1570,7 +1577,7 @@ $('lgx').onclick=()=>csvDl('esms-log.csv',[['Time','Type','Details','Actor'],...
 /* ─── سجل الاستعلامات (من الخادم فقط) ─── */
 const QL={rows:[],total:0,hasMore:false,busy:false,loaded:false,seq:0};
 const QL_RES={found:['ناجح','#2f7d4f'],not_found:['لم يُعثر على بيانات','#b3392e'],closed:['الاستعلام مغلق','#6b6250']};
-const QL_SRC={web:'الموقع'};
+const QL_SRC={web:'الموقع',legacy:'سجل قديم'};
 function qlRender(){
   $('qln').textContent=QL.total;
   $('qlb').innerHTML=QL.rows.length?QL.rows.map(x=>{
@@ -1586,6 +1593,7 @@ async function qlLoad(reset){
   try{
     const r=await apiGet('get_lookup_log',{...auth(),q:$('qlq').value.trim(),result:$('qlr').value,from:$('qlf').value,to:$('qlt').value,offset:reset?0:QL.rows.length,limit:50});
     if(seq!==QL.seq)return;
+    if(!Array.isArray(r.rows))throw new Error('الخادم المنشور لا يدعم سجل الاستعلامات — أعد نشر Code.gs كنسخة جديدة');
     QL.rows=reset?(r.rows||[]):QL.rows.concat(r.rows||[]);QL.total=r.total||0;QL.hasMore=!!r.hasMore;QL.loaded=true;
     $('qlmsg').textContent='';qlRender();
   }catch(e){if(seq===QL.seq)$('qlmsg').textContent=e.message||'تعذر تحميل السجل'}
