@@ -744,9 +744,10 @@ const LG={login:['دخول','#2f7d4f'],fail:['دخول فاشل','#b3392e'],logo
 
 function boom(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;const c=$('cf'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;const cols=['#b8923a','#e6c26d','#fbf6e9','#8f6d1f','#2f7d4f'];const P=Array.from({length:110},()=>({x:innerWidth/2,y:innerHeight*.45,vx:(Math.random()-.5)*16,vy:-Math.random()*14-4,s:Math.random()*8+4,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:cols[Math.random()*5|0]}));let t=0;(function f(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.vy+=.36;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.globalAlpha=Math.max(0,1-t/130);x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()});if(++t<130)requestAnimationFrame(f);else x.clearRect(0,0,c.width,c.height)})()}
 async function ensureFonts(sample){
-  try{await Promise.all([document.fonts.load('700 60px Amiri','أ'+sample),document.fonts.load('700 30px Cairo','أ'+sample),document.fonts.load('600 30px Cairo','ABC'),document.fonts.load('800 30px Cairo','أ'),document.fonts.load('400 30px Cairo','أ'),document.fonts.load('italic 40px Amiri','Ab')])}catch(e){}
-  const ok=fam=>[...document.fonts].some(f=>f.family.replace(/["']/g,'')===fam&&f.status==='loaded');
-  if(!ok('Cairo')||!ok('Amiri'))throw new Error('لم يكتمل تحميل الخطوط — تأكد من الاتصال ثم أعد المحاولة');
+  /* ننتظر تحميل الخطوط (حد أقصى 8 ثوانٍ). لو الخطوط الخارجية محجوبة أو بطيئة نكمل بخط
+     النظام العربي الاحتياطي بدل ما نفشّل الإيصال/الكارنيه (كل البيانات والصورة وQR تظهر كاملة). */
+  const load=Promise.all([document.fonts.load('700 60px Amiri','أ'+sample),document.fonts.load('700 30px Cairo','أ'+sample),document.fonts.load('600 30px Cairo','ABC'),document.fonts.load('800 30px Cairo','أ'),document.fonts.load('400 30px Cairo','أ'),document.fonts.load('italic 40px Amiri','Ab')]).catch(()=>{});
+  await Promise.race([load,sleep(8000)]);
 }
 async function drawCard(m,phImg){
  const W=1672,H=941,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
@@ -834,7 +835,7 @@ let BACKEND_PHOTO=true;
 async function photoFromServer(code){
   if(!BACKEND_PHOTO)return null;
   let r;
-  try{r=await toTimeout(apiGet('lookup_photo',{code}),20000)}
+  try{r=await toTimeout(apiGet('lookup_photo',{code}),45000)}
   catch(e){
     if(e instanceof PhotoErr)throw e;
     const c=String(e&&e.code||'').toLowerCase();
