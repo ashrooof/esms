@@ -712,7 +712,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycbw3VxGEaZRX1NxvViscNK64YN09Ae2EjSnV572A59SP_zjrycn06kBYKVUcejAp1Sex/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbwwARvBETPQXlSggXSaZjHxII7nkwu0ElQAohcq7ozEKbdVmziL43ds8HLmnj_iE16S/exec';
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1205,7 +1205,7 @@ const FD=(id,src,lbl,x,y,size,o)=>({id,src,lbl,x,y,size,color:'#14181f',align:'c
 const DEF_DESIGN=()=>({v:2,
  member:{W:1024,H:1536,ext:0,scale:2,frame:'',vars:{},
   photo:{shape:'rect',cx:512.5,cy:647,w:585,h:770,zoom:1,ox:0,oy:0,rad:0,stroke:false},
-  fields:[FD('name','name','',512,1176,118,{font:'A',color:'#16385c',max:640}),
+  fields:[FD('name','name','',512,1176,118,{font:'A',color:'#0f334c',max:640}),
    FD('code','code','الكود الجامعي',512,1478,34,{ltr:1,color:'#16385c',max:420}),
    FD('nid','nid','الرقم القومي',450,1700,50,{ltr:1,max:520,visible:false}),
    FD('phone','phone','رقم التليفون',1150,1830,50,{ltr:1,max:520,visible:false}),FD('year','year','الفرقة الدراسية',450,1830,50,{max:520,visible:false}),
