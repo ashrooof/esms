@@ -161,10 +161,10 @@ footer{text-align:center;margin-top:26px;color:var(--mut);font-size:.8rem}
 .rf{font-size:.76rem;color:#6b6250;line-height:1.8;margin:10px 0 0}
 .lacts{display:none;width:100%;margin-top:16px}.lacts.on{display:grid;animation:pop .6s var(--e) both}
 .lk .sec{margin:38px 0 16px}
-#pin,#lb{position:fixed;inset:0;z-index:60;background:rgba(10,12,16,.55);backdrop-filter:blur(8px);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .4s}
-#pin.show,#lb.show{opacity:1;pointer-events:auto}
+#pin,#lb,#shr{position:fixed;inset:0;z-index:60;background:rgba(10,12,16,.55);backdrop-filter:blur(8px);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .4s}
+#pin.show,#lb.show,#shr.show{opacity:1;pointer-events:auto}
 .card{width:min(340px,90%);text-align:center;background:var(--sol);border:1px solid var(--line);border-radius:26px;padding:26px 22px;transform:scale(.8);transition:transform .55s var(--sp)}
-#pin.show .card,#lb.show .lbc{transform:none}
+#pin.show .card,#shr.show .card,#lb.show .lbc{transform:none}
 .big{width:60px;height:60px;padding:13px;border-radius:19px;background:rgba(245,158,11,.14);margin:0 auto 8px}
 #pinem,#pinpw{width:100%;height:50px;padding:0 13px;text-align:center;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px;outline:none;direction:ltr}
 #pinem:focus,#pinpw:focus{border-color:var(--gold)}
@@ -365,6 +365,11 @@ header{transform:translateY(calc(var(--p,0)*.22px));opacity:calc(1 - var(--p,0)/
 .cdg{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;margin-top:12px}@media(max-width:900px){.cdg{grid-template-columns:1fr}}
 .cdp canvas{width:100%;height:auto;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.2);margin-top:8px}.cdc h4{margin:14px 0 6px}.cdr{display:flex;flex-wrap:wrap;gap:8px}.cdf b{display:flex;align-items:center;gap:6px;min-width:110px}
 .cdl{display:flex;flex-direction:column;font:600 .72rem Cairo;gap:3px;min-width:70px;flex:1}.cdw input:not([type=checkbox]),.cdw select{font:600 .8rem Cairo;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--sol);color:var(--ink);width:100%}.cdc .acts{display:flex;flex-wrap:wrap;gap:6px}
+#shr .card{width:min(390px,92%);max-height:90vh;overflow:auto}
+#shr h3{margin:0 0 8px;font-family:Amiri,serif;font-size:1.4rem}
+#shr .hint{margin:0 0 10px;font-size:.82rem;line-height:1.7;color:var(--mut)}
+#shrt{width:100%;box-sizing:border-box;padding:12px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:600 .86rem/1.8 Cairo,sans-serif;text-align:start;resize:none;outline:none}
+#shr .acts .btn{justify-content:center}
 </style>
 <style id="esms-v10">
 /* ESMS v10 — unified design layer (parchment · navy ink · burnished gold) */
@@ -399,8 +404,8 @@ h1{animation:none;background-position:50% 0;letter-spacing:0;line-height:1.35}
 .ic{filter:saturate(.6)}
 .avatar:before{animation-duration:48s}
 .stamp,.rc-st{border-radius:var(--r1)}
-#pin .card,.lbc{border-radius:var(--r3);border:1px solid var(--line);background:var(--sol);box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
-#pin,#lb{backdrop-filter:blur(5px)}
+#pin .card,#shr .card,.lbc{border-radius:var(--r3);border:1px solid var(--line);background:var(--sol);box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+#pin,#lb,#shr{backdrop-filter:blur(5px)}
 ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;border:2px solid var(--bg)}
 @media(max-width:720px){.fc{padding:18px 16px}}
 .charts{display:grid;gap:14px;margin:16px 0}@media(min-width:760px){.charts{grid-template-columns:1fr 1fr}.charts .chc:nth-child(3){grid-column:1/-1}}
@@ -491,9 +496,9 @@ input,select,textarea{color-scheme:light}
 #toast.bad{background:var(--raise);border-color:var(--bad);color:var(--ink)}#toast.bad:before{color:var(--bad);--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.4v.1'/%3E%3C/svg%3E")}
 #toast a{color:var(--gold2)}
 /* modals */
-#pin,#lb{background:rgba(12,16,32,.7);backdrop-filter:blur(8px)}
+#pin,#lb,#shr{background:rgba(12,16,32,.7);backdrop-filter:blur(8px)}
 .card,.lbc{background:var(--raise);border-radius:var(--r3);box-shadow:0 40px 80px -24px rgba(0,0,0,.9)}
-#pin.show .card,#lb.show .lbc{animation:modalIn .35s var(--e) both}
+#pin.show .card,#shr.show .card,#lb.show .lbc{animation:modalIn .35s var(--e) both}
 @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.96)}}
 #e_pw{color:var(--bad)}
 #lbi{background:var(--bg2)}
@@ -544,7 +549,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 .qtab tbody tr:nth-child(even){background:rgba(27,36,64,.03)}.qtab tbody tr:hover{background:rgba(184,137,31,.1)}
 .qtab td{border-bottom:1px solid rgba(226,218,198,.8)}
 .dist{background:rgba(255,255,255,.18)}
-#pin,#lb{background:rgba(27,36,64,.45)}
+#pin,#lb,#shr{background:rgba(27,36,64,.45)}
 .sy{background:#fff}.mach .slot,.scr{border-color:rgba(255,211,106,.55)}
 
 /* v11.3 luxury printer: brushed graphite body, champagne-gold bezel, no neon */
@@ -581,6 +586,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3.5h10V9M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="6.5" rx="1"/></symbol>
 
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="3"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><circle cx="12" cy="15.7" r="1.2"/></symbol>
 <symbol id="i-fullname" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c0-3.6 2.7-5.8 6.2-5.8s6.2 2.2 6.2 5.8M16 8h5M16 12h4"/></symbol>
 <symbol id="i-identity" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5V6z"/><circle cx="12" cy="10" r="2.3"/><path d="M8.3 16.5c.6-2 2.2-3 3.7-3s3.1 1 3.7 3"/></symbol>
@@ -649,6 +655,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 <div class="acts lacts" id="lacts">
 <button class="btn sm span" id="lprint" type="button"></button>
 <button class="btn sm span" id="lcard" type="button" style="display:none"></button>
+<button class="btn sm span" id="lshare" type="button" style="display:none"></button>
 <button class="btn sec sm" id="lnew" type="button"></button>
 <button class="btn sec sm span" id="lback" type="button"></button>
 </div>
@@ -682,6 +689,17 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 </div>
 </div></div>
 
+<div id="shr" onclick="if(event.target===this)closeShr()"><div class="card" role="dialog" aria-label="مشاركة البوستر">
+<h3>مشاركة البوستر</h3>
+<p class="hint" id="shrn"></p>
+<textarea id="shrt" readonly rows="8" dir="auto" aria-label="الكابشن"></textarea>
+<div class="acts" style="margin-top:12px">
+<button class="btn sm" id="shrc" type="button"><svg class="ci"><use href="#i-share"/></svg>نسخ الكابشن</button>
+<button class="btn sm" id="shrs" type="button"><svg class="ci"><use href="#i-share"/></svg>مشاركة النص</button>
+<button class="btn sm span" id="shrd" type="button"><svg class="ci"><use href="#i-dl"/></svg>تحميل البوستر</button>
+<button class="btn sec sm span" id="shrx" type="button">إغلاق</button>
+</div></div></div>
+
 <div id="dash"><div class="dwrap">
 <nav class="dnav"><div class="dl"><img alt="ESMS"><span>THE EXCHANGE</span></div>
 <div class="acts"><button class="btn sm" onclick="csv()" id="bcsv" type="button"></button><button class="btn sec sm" id="bref" type="button"></button><button class="btn sec sm" onclick="closeDash()" id="bout" type="button"></button></div>
@@ -712,7 +730,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycbwwARvBETPQXlSggXSaZjHxII7nkwu0ElQAohcq7ozEKbdVmziL43ds8HLmnj_iE16S/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbw3VxGEaZRX1NxvViscNK64YN09Ae2EjSnV572A59SP_zjrycn06kBYKVUcejAp1Sex/exec';
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -751,7 +769,7 @@ function yrOf(raw){
 }
 const yrName=raw=>{const y=yrOf(raw),f=YEARS.find(x=>x[0]===y);return f?f[1]:String(raw==null?'':raw).trim()};
 const rcRows=m=>[['الاسم',m.name||''],['الكود الجامعي',m.code||''],['الرقم القومي',m.nid||''],['رقم التليفون',m.phone||''],
-  ['اللجنة',cmName(m.committee)||'غير مسجّلة'],['الفرقة الدراسية',yrName(m.year)||'غير مسجّلة']].filter(r=>r[1]&&r[1]!=='—');
+  ['اللجنة',cmName(m.committee)||'غير مسجّلة'],['الفرقة الدراسية',yrName(m.year)||'غير مسجّلة']].filter(r=>r[1]&&r[1]!=='—'&&!(m._hideCode&&r[0]==='الكود الجامعي'));
 const RC_LTR=['الكود الجامعي','الرقم القومي','رقم التليفون'];
 const sf=s=>{s=String(s==null?'':s);return /^[=+\-@\t\r]/.test(s)?"'"+s:s};
 function csvDl(name,rows){const b=new Blob(['\ufeff'+rows.map(r=>r.map(s=>'"'+sf(s).replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
@@ -1190,7 +1208,7 @@ async function downloadReceipt(m,btn,fresh){
     const cv=await drawReceipt(mm);
     const blob=await new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('تعذر تحويل الإيصال لصورة')),'image/png'));
     if(!blob||blob.size<5000)throw new Error('الصورة الناتجة غير مكتملة');
-    const name='ESMS-receipt-'+String(mm.code).replace(/[^\w-]/g,'')+'.png';
+    const name=mm._hideCode?'ESMS-receipt.png':'ESMS-receipt-'+String(mm.code).replace(/[^\w-]/g,'')+'.png';
     saveBlob(blob,name);
     clientEvent('receipt_downloaded',mm.code);
   }catch(e){toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad')}
@@ -1249,7 +1267,7 @@ async function renderCard(tk,m,ph){
   }
   if('letterSpacing' in g)g.letterSpacing='0px';
   for(const f of D.fields){
-    if(f.visible===false)continue;const v=cdVal(f,m,D);if(!v)continue;
+    if(f.visible===false)continue;if(tk==='member'&&f.src==='code')continue;/* الكود الجامعي لا يُرسم على بوستر القبول أبدًا */const v=cdVal(f,m,D);if(!v)continue;
     const fam=f.font==='A'?'Amiri,serif':'Cairo,sans-serif';let z=+f.size||40;
     do{g.font='700 '+z+'px '+fam;if(g.measureText(v).width<=f.max)break;z-=2}while(z>14);
     g.textAlign=f.align||'center';g.direction=f.ltr?'ltr':'rtl';g.fillStyle=f.color;g.fillText(v,f.x,f.y);
@@ -1276,7 +1294,7 @@ function cdBuild(){
   ${cdT==='board'?`<h4>بيانات الفعالية</h4><div class="cdr">${cdIn('vars.event','اسم الفعالية','text')}${cdIn('vars.eventSub','سطر ثانٍ (تاريخ/مكان)','text')}${cdIn('vars.role','الصفة','text')}</div>`:''}
   <h4>الصورة</h4><div class="cdr"><label class="cdl">الشكل<select data-p="photo.shape"><option value="circle" ${D.photo.shape==='circle'?'selected':''}>دائرة</option><option value="rect" ${D.photo.shape==='rect'?'selected':''}>مستطيل</option></select></label>${cdIn('photo.cx','س')}${cdIn('photo.cy','ص')}${cdIn('photo.w','عرض')}${cdIn('photo.h','ارتفاع')}${cdIn('photo.zoom','تكبير','number','step="0.05"')}${cdIn('photo.ox','إزاحة س')}${cdIn('photo.oy','إزاحة ص')}${cdIn('photo.rad','استدارة')}</div>
   ${D.ext||cdT==='member'?`<div class="cdr">${cdIn('ext','ارتفاع شريط البيانات')}</div>`:''}
-  <h4>النصوص</h4>${D.fields.map((f,i)=>`<div class="cdr cdf"><b>${cdIn('fields.'+i+'.visible','','checkbox')}${f.src}</b>${cdIn('fields.'+i+'.x','س')}${cdIn('fields.'+i+'.y','ص')}${cdIn('fields.'+i+'.size','حجم')}${cdIn('fields.'+i+'.max','أقصى عرض')}${cdIn('fields.'+i+'.color','لون','color')}<label class="cdl">محاذاة<select data-p="fields.${i}.align">${['center','left','right'].map(a=>`<option ${f.align===a?'selected':''}>${a}</option>`).join('')}</select></label></div>`).join('')}</div></div>`;
+  <h4>النصوص</h4>${D.fields.map((f,i)=>(cdT==='member'&&f.src==='code')?'':`<div class="cdr cdf"><b>${cdIn('fields.'+i+'.visible','','checkbox')}${f.src}</b>${cdIn('fields.'+i+'.x','س')}${cdIn('fields.'+i+'.y','ص')}${cdIn('fields.'+i+'.size','حجم')}${cdIn('fields.'+i+'.max','أقصى عرض')}${cdIn('fields.'+i+'.color','لون','color')}<label class="cdl">محاذاة<select data-p="fields.${i}.align">${['center','left','right'].map(a=>`<option ${f.align===a?'selected':''}>${a}</option>`).join('')}</select></label></div>`).join('')}</div></div>`;
   const w=$('cdw');
   w.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{cdT=b.dataset.t;cdBuild();cdPreview()});
   w.querySelectorAll('[data-p]').forEach(el=>el.oninput=()=>{const t=el.type,v=t==='checkbox'?el.checked:(t==='number'?+el.value:el.value);cdSet(DESIGN[cdT],el.dataset.p,v);clearTimeout(cdTm);cdTm=setTimeout(cdPreview,160)});
@@ -1561,6 +1579,7 @@ let lkM=null,cardCv=null,cardUrl='',cardP=null,cardDl=false;
 const PT=['calc(-100% + 2px)','-91%','-91%','-81%','-81%','-70%','-70%','-58%','-58%','-45%','-45%','-32%','-32%','-20%','-20%','-10%','-10%','-3%','-3%','0%'];
 const PTm=[0,.075,.105,.18,.21,.285,.315,.39,.42,.495,.525,.6,.63,.705,.735,.81,.84,.915,.945,1];
 function resetPaper(){
+  shareFile=null;$('lshare').style.display='none';closeShr();
   lkTok++;if(anim){anim.cancel();anim=null}
   const o=$('out');o.style.height='0px';o.classList.remove('on');$('cardbox').style.display='none';$('cardbox').innerHTML='';$('lcard').style.display='none';cardCv=null;cardUrl='';cardP=null;$('pw').style.transform='';$('lacts').classList.remove('on');
 }
@@ -1591,7 +1610,7 @@ async function lookup(){
     await feed();
     setSt('done','دي حالة طلبك دلوقتي');
     $('lprint').innerHTML=ico('dl')+'تحميل الإيصال كصورة';
-    if(m.st==='accepted'){cardP=buildCard(m);$('lcard').style.display=''}else{cardP=null;cardBoxSet('none',m);$('lcard').style.display='none'}
+    if(m.st==='accepted'){cardP=buildCard(m);$('lcard').style.display='';$('lshare').style.display='';$('lshare').innerHTML=ico('share')+'مشاركة البوستر';prepShare(m,cardP)}else{cardP=null;cardBoxSet('none',m);$('lcard').style.display='none';$('lshare').style.display='none'}
     $('lnew').style.gridColumn='1/-1';
     $('lacts').classList.add('on');
   }catch(e){setSt('nf',e.message||'تعذر الاتصال بالخادم')}
@@ -1603,7 +1622,6 @@ function fillPaper(m){
   const msg={review:'طلبك لسه تحت المراجعة.',rejected:'للأسف لم يتم قبول طلبك.',accepted:'مبروك! تم قبولك.'}[k]||'';
   P.innerHTML=`<img class="rl" src="${LOGO_L}" alt=""><h2>حالة الطلب</h2><div class="rs">ESMS</div><hr class="dsh">
     <div class="rn">أهلاً ${esc((m.name||'').split(' ')[0]||'')}</div>
-    <div class="rr"><span>الكود الجامعي</span><b dir="ltr">${esc(m.code)}</b></div>
     ${cmName(m.committee)?`<div class="rr"><span>اللجنة</span><b>${esc(cmName(m.committee))}</b></div>`:''}
     ${yrName(m.year)?`<div class="rr"><span>الفرقة الدراسية</span><b>${esc(yrName(m.year))}</b></div>`:''}
     <div class="stamp" style="color:${s[1]};border-color:${s[1]}">${s[0]}</div>
@@ -1611,9 +1629,9 @@ function fillPaper(m){
 }
 function zoomCard(){
   if(!cardUrl||!lkM)return;const im=$('lbi');im.onerror=null;im.onload=null;im.src=cardUrl;$('lbn').textContent=lkM.name;$('lbm').textContent='اضغط حفظ لتحميل البوستر كصورة';
-  const dd=$('lbd');dd.innerHTML=ico('dl')+'حفظ البوستر';dd.href=cardUrl;dd.download='ESMS-card-'+lkM.code+'.png';$('lb').classList.add('show');
+  const dd=$('lbd');dd.innerHTML=ico('dl')+'حفظ البوستر';dd.href=cardUrl;dd.download='ESMS-poster.png';$('lb').classList.add('show');
 }
-$('lprint').onclick=()=>downloadReceipt(lkM,$('lprint'),false);
+$('lprint').onclick=()=>downloadReceipt(lkM&&{...lkM,_hideCode:true},$('lprint'),false);
 $('lcard').onclick=async()=>{
   const m=lkM;if(!m||m.st!=='accepted'||cardDl)return;
   cardDl=true;const b=$('lcard'),old=b.innerHTML;b.disabled=true;b.innerHTML='<span class="spin g"></span>جاري تجهيز البوستر…';
@@ -1624,10 +1642,60 @@ $('lcard').onclick=async()=>{
     if(!cardCv||m!==lkM)throw new Error('card');
     const blob=await new Promise((res,rej)=>{try{cardCv.toBlob(x=>x?res(x):rej(new Error('blob')),'image/png')}catch(er){rej(er)}});
     if(!blob||blob.size<5000)throw new Error('small');
-    saveBlob(blob,'ESMS-card-'+String(m.code).replace(/[^\w-]/g,'')+'.png');
+    saveBlob(blob,'ESMS-poster.png');
     clientEvent('card_downloaded',m.code);
   }catch(e){toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad');clientEvent('card_failed',m.code,'other')}
   finally{cardDl=false;b.disabled=false;b.innerHTML=old}
+};
+/* ═══ مشاركة بوستر القبول (Web Share API + بدائل) ═══ */
+const SHARE_CAPTION='🦅✨ لكل بداية حكاية، ولكل خطوة جديدة طموح بيكبر..\n\nسعيد بانضمامي لعائلة ESMS، ومتطلع لرحلة مليانة تجارب جديدة، وتحديات، ونجاحات نحققها سوا. 📈\n\nTogether Towards a Brighter Future.';
+let shareFile=null,shareBusy=false;
+const cvBlob=cv=>new Promise((res,rej)=>{try{cv.toBlob(x=>x&&x.size>=5000?res(x):rej(new Error('blob')),'image/png')}catch(e){rej(e)}});
+const toFile=b=>new File([b],'ESMS-poster.png',{type:'image/png'});
+/* نجهّز ملف الصورة مقدمًا عشان ضغطة "مشاركة" تفتح قائمة النظام فورًا (المتصفحات بتشترط إنها تتم داخل نفس الضغطة) */
+function prepShare(m,p){Promise.resolve(p).then(async()=>{if(m!==lkM||!cardCv)return;const f=toFile(await cvBlob(cardCv));if(m===lkM)shareFile=f}).catch(()=>{})}
+function closeShr(){const e=$('shr');if(e)e.classList.remove('show')}
+async function copyCaption(){
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(SHARE_CAPTION);return true}}catch{}
+  try{const t=$('shrt');t.removeAttribute('readonly');t.focus();t.select();t.setSelectionRange(0,t.value.length);const ok=document.execCommand&&document.execCommand('copy');t.setAttribute('readonly','');t.blur();return !!ok}catch{return false}
+}
+function openShr(file,why){
+  $('shrt').value=SHARE_CAPTION;
+  $('shrn').textContent=(why==='nofiles'?'مشاركة الصورة مباشرة مش مدعومة على جهازك أو متصفحك. ':'')+'انسخ الكابشن وحمّل البوستر، وبعدها ضيفهم في التطبيق اللي تحب تنشر عليه (زي إنستجرام). مفيش حاجة بتتنشر تلقائيًا.';
+  $('shrs').style.display=navigator.share?'':'none';
+  $('shrc').onclick=async()=>{const ok=await copyCaption();toast(ok?'تم نسخ الكابشن':'تعذر النسخ تلقائيًا — اضغط على النص وانسخه يدويًا',ok?'ok':'bad')};
+  $('shrs').onclick=async()=>{try{await navigator.share({text:SHARE_CAPTION})}catch(e){if(!(e&&e.name==='AbortError'))toast('تعذر فتح المشاركة — استخدم نسخ الكابشن','bad')}};
+  $('shrd').onclick=()=>{try{saveBlob(file,'ESMS-poster.png');toast('جاري تحميل البوستر','ok')}catch{toast('تعذر تنزيل الملف، يرجى المحاولة مرة أخرى','bad')}};
+  $('shrx').onclick=closeShr;
+  $('shr').classList.add('show');
+}
+$('lshare').onclick=async()=>{
+  const m=lkM;if(!m||m.st!=='accepted'||shareBusy)return;
+  shareBusy=true;const b=$('lshare'),old=b.innerHTML;
+  try{
+    /* ننسخ الكابشن للحافظة داخل نفس الضغطة (احتياطي لتطبيقات بتتجاهل النص مع الصورة، زي إنستجرام وفيسبوك) */
+    const cp=(navigator.clipboard&&navigator.clipboard.writeText)?navigator.clipboard.writeText(SHARE_CAPTION).then(()=>true,()=>false):Promise.resolve(false);
+    let file=shareFile;
+    if(!file){
+      b.disabled=true;b.innerHTML='<span class="spin g"></span>جاري تجهيز البوستر…';
+      try{if(!cardCv&&cardP)await cardP;if(!cardCv)await buildCard(m,true);if(cardCv&&m===lkM){file=toFile(await cvBlob(cardCv));shareFile=file}}catch{}
+      b.disabled=false;b.innerHTML=old;
+    }
+    if(m!==lkM)return;
+    if(!file){toast(cardErrMsg||'تعذر تجهيز البوستر، حاول مرة أخرى','bad');return}
+    const canFiles=typeof navigator.canShare==='function'&&navigator.share&&navigator.canShare({files:[file]});
+    if(canFiles){
+      try{
+        await navigator.share({files:[file],text:SHARE_CAPTION});
+        toast((await cp)?'تمت المشاركة. الكابشن اتنسخ كمان — لو التطبيق اللي اخترته ما أضافهوش، الصقه بنفسك.':'تمت المشاركة. لو التطبيق اللي اخترته ما أضافش الكابشن، استخدم «مشاركة البوستر» مرة تانية وانسخه من القائمة.','ok');
+        return;
+      }catch(e){
+        if(e&&e.name==='AbortError')return;           /* المستخدم لغى المشاركة: لا رسالة خطأ */
+        /* أي فشل تاني (مثلًا انتهت صلاحية الضغطة): نعرض البديل بدل رسالة خطأ مضللة */
+      }
+    }
+    openShr(file,canFiles?'failed':'nofiles');
+  }finally{shareBusy=false;b.disabled=false;b.innerHTML=old}
 };
 $('lback').onclick=()=>{updateBanner();scrollTo({top:0,behavior:'smooth'})};
 $('lgo').onclick=lookup;
@@ -1655,7 +1723,7 @@ const tryPin=async()=>{
 };
 $('pinGo').onclick=tryPin;
 ['pinem','pinpw'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')tryPin()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLb()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLb();closeShr()}});
 
 /* ═══════════════════════════════════════════════════════════════
    تحميل البيانات
