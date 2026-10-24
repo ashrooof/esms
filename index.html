@@ -670,8 +670,8 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 <div id="pin"><div class="card">
 <svg class="ci big"><use href="#i-lock"/></svg>
 <h3 style="margin:0 0 14px;font-family:Amiri,serif;font-size:1.4rem">دخول الإدارة</h3>
-<input id="pinem" type="email" placeholder="البريد الإلكتروني" autocomplete="username" dir="ltr" autocapitalize="off" spellcheck="false">
-<input id="pinpw" type="password" placeholder="كلمة المرور" autocomplete="current-password" dir="ltr" style="margin-top:10px">
+<input id="pinem" type="text" placeholder="اضغط لإرسال رمز الدخول إلى تيليجرام" autocomplete="one-time-code" inputmode="numeric" dir="ltr" autocapitalize="off" spellcheck="false">
+<input id="pinpw" type="password" placeholder="" autocomplete="off" dir="ltr" style="display:none;margin-top:10px">
 <div id="e_pw" role="alert"></div>
 <div class="acts" style="margin-top:12px">
 <button class="btn" id="pinGo" type="button">دخول</button>
@@ -730,7 +730,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycbwN3lIEd2mNkbT98vJfwVZ2vnyA8JEbgkAuTBTxCpVZrokE8margrMGVwh4T_8oAkw9/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbwV-4oXPfRfeuke19fPGEMhGADQuGb9Ilwjchscg31HN6FvBHEBJSPh7hSRQWE0RKWb/exec';
 // Registration, dashboard, and ESMS Community all use the same new backend deployment.
 const COMMUNITY_API_URL=API_URL;
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
@@ -1709,22 +1709,26 @@ $('lnew').onclick=()=>{resetPaper();$('lq').value='';setSt('idle','جاهز لل
    ═══════════════════════════════════════════════════════════════ */
 let sT=0,sL=0;
 $('adm').onclick=()=>{const n=Date.now();sT=n-sL>2000?1:sT+1;sL=n;if(sT>=15){sT=0;openPin()}};
-function openPin(){$('pin').classList.add('show');$('pinem').value='';$('pinpw').value='';$('e_pw').textContent='';setTimeout(()=>$('pinem').focus(),250)}
+let pinOtpSent=false;
+function openPin(){pinOtpSent=false;$('pin').classList.add('show');$('pinem').value='';$('pinem').type='text';$('pinem').inputMode='numeric';$('pinem').placeholder='اضغط دخول لإرسال رمز التحقق';$('pinpw').value='';$('pinpw').style.display='none';$('pinGo').textContent='إرسال رمز الدخول';$('e_pw').textContent='';setTimeout(()=>$('pinem').focus(),250)}
 $('pinX').onclick=()=>{$('pinpw').value='';$('pin').classList.remove('show')};
 const tryPin=async()=>{
-  const er=$('e_pw'),b=$('pinGo'),email=$('pinem').value.trim(),password=$('pinpw').value;er.textContent='';
-  if(!email||!password){er.textContent='اكتب البريد وكلمة المرور';er.style.color='var(--bad)';return}
-  b.disabled=true;
+  const er=$('e_pw'),b=$('pinGo'),otp=$('pinem').value.trim();er.textContent='';b.disabled=true;
   try{
-    const r=await apiPost({action:'login',email,password});
-    ADMIN_TOKEN=r.token||'';$('pinpw').value='';
-    if(!ADMIN_TOKEN)throw new Error('الخادم لم يرجع جلسة إدارية');
+    if(!pinOtpSent){
+      const r=await apiGet('request_otp');
+      pinOtpSent=true;$('pinem').value='';$('pinem').placeholder='اكتب رمز التحقق المكوّن من 6 أرقام';$('pinem').maxLength=6;$('pinGo').textContent='تأكيد الرمز';
+      er.textContent=r.message||'تم إرسال رمز الدخول إلى تيليجرام. صالح لمدة دقيقتين.';er.style.color='var(--gold)';$('pinem').focus();return;
+    }
+    if(!/^\d{6}$/.test(otp)){er.textContent='اكتب رمز التحقق المكوّن من 6 أرقام';er.style.color='var(--bad)';return}
+    const r=await apiGet('verify_otp',{otp});
+    ADMIN_TOKEN=r.token||'';if(!ADMIN_TOKEN)throw new Error('الخادم لم يرجع جلسة إدارية');
     $('pin').classList.remove('show');await loadAll();openDash();
-  }catch(e){er.textContent=e.code==='WRONG'?'البريد أو كلمة المرور غير صحيحة':(e.message||'تعذر تسجيل الدخول');er.style.color='var(--bad)'}
+  }catch(e){er.textContent=e.message||'تعذر تسجيل الدخول';er.style.color='var(--bad)'}
   finally{b.disabled=false}
 };
 $('pinGo').onclick=tryPin;
-['pinem','pinpw'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')tryPin()});
+$('pinem').onkeydown=e=>{if(e.key==='Enter')tryPin()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLb();closeShr()}});
 
 /* ═══════════════════════════════════════════════════════════════
