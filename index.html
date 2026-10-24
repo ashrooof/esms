@@ -730,9 +730,9 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycbw3VxGEaZRX1NxvViscNK64YN09Ae2EjSnV572A59SP_zjrycn06kBYKVUcejAp1Sex/exec';
-// Separate API for ESMS Community only. Keep API_URL above for the existing registration form/admin.
-const COMMUNITY_API_URL='https://script.google.com/macros/s/AKfycbwcohUKHOodYy9QQ7JRSkco1UkndnR2IEIm6VZvpNOLKp59JRf_fNzhlueCs3xz8ORH/exec';
+const API_URL='https://script.google.com/macros/s/AKfycby8FYgagGXzAAbYRqMWd5JSIMSjXnKu-SDFANk8YJ7C1h0mLCGc1qVe20gLmtFF5QHA/exec';
+// Registration, dashboard, and ESMS Community all use the same new backend deployment.
+const COMMUNITY_API_URL=API_URL;
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2058,7 +2058,7 @@ new MutationObserver(()=>{const k=kind();if(k&&lb&&Date.now()-lt<2500)flash(lb,k
 })();
 
 </script>
-<!-- ═════ ESMS Community (يعمل عبر نفس API_URL؛ لا يغيّر التسجيل ولا لوحة الإدارة الحالية) ═════ -->
+<!-- ESMS Community: integrated with the same backend deployment -->
 <style id="cm-css">
 #cmFab{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:16px;z-index:120;border:1px solid var(--gold);background:var(--sol);color:var(--ink);border-radius:999px;padding:10px 18px;font:700 14px Cairo,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}
 #cmBox{position:fixed;inset:0;z-index:130;background:var(--bg);color:var(--ink);overflow:auto;display:none;font-family:Cairo,sans-serif;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
