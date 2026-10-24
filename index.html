@@ -730,7 +730,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycby8FYgagGXzAAbYRqMWd5JSIMSjXnKu-SDFANk8YJ7C1h0mLCGc1qVe20gLmtFF5QHA/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbydTymEPs8yWULAqzEsykxLTbJK5KzL7U1tbEO5enJZTK12Xf2eB3s-EVeG6AfFNRNg/exec';
 // Registration, dashboard, and ESMS Community all use the same new backend deployment.
 const COMMUNITY_API_URL=API_URL;
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
@@ -798,7 +798,7 @@ function apiUrl(action,params={}){
 async function apiFetch(url,opt,ms){
   const ac=new AbortController(),t=setTimeout(()=>ac.abort(),ms);let tx;
   try{const r=await fetch(url,{...opt,signal:ac.signal});tx=await r.text()}
-  catch(e){const er=new Error(msgBuild('connection_failed'));er.code='NETWORK';throw er}
+  catch(e){const er=new Error('تعذر الوصول إلى Google Apps Script. راجع رابط /exec، ثم تأكد من نشر Web App بصلاحية Execute as: Me وAccess: Anyone.');er.code='NETWORK';throw er}
   finally{clearTimeout(t)}
   let j;try{j=JSON.parse(tx)}catch{const er=new Error('رد غير صالح من الخادم');er.code='BAD_RESPONSE';throw er}
   if(!j||j.success===false){const e=new Error(j?.message||j?.error||'فشل الطلب');e.code=j?.error;throw e}
@@ -1509,10 +1509,10 @@ $('photo').onchange=e=>{
   if(f.size>30*1048576){setErr('photo','حجم الصورة أكبر من 30MB',true);return}
   const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{
-    const W=im.naturalWidth,H=im.naturalHeight,s=Math.min(1,720/Math.max(W,H));
+    const W=im.naturalWidth,H=im.naturalHeight,s=Math.min(1,640/Math.max(W,H));
     const c=document.createElement('canvas');c.width=Math.round(W*s);c.height=Math.round(H*s);
     const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(im,0,0,c.width,c.height);
-    photoData=c.toDataURL('image/jpeg',.92);photoFile=f;photoDim=[W,H];URL.revokeObjectURL(u);
+    photoData=c.toDataURL('image/jpeg',.78);photoFile=f;photoDim=[W,H];URL.revokeObjectURL(u);
     $('av').style.backgroundImage='url('+photoData+')';$('av').classList.add('has');
     $('pbt').textContent='تغيير الصورة';
     const low=Math.min(W,H)<400;const m=$('meta');m.className='meta'+(low?' warn':'');
