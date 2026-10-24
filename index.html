@@ -670,8 +670,8 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 <div id="pin"><div class="card">
 <svg class="ci big"><use href="#i-lock"/></svg>
 <h3 style="margin:0 0 14px;font-family:Amiri,serif;font-size:1.4rem">دخول الإدارة</h3>
-<input id="pinem" type="text" placeholder="اضغط لإرسال رمز الدخول إلى تيليجرام" autocomplete="one-time-code" inputmode="numeric" dir="ltr" autocapitalize="off" spellcheck="false">
-<input id="pinpw" type="password" placeholder="" autocomplete="off" dir="ltr" style="display:none;margin-top:10px">
+<input id="pinem" type="email" placeholder="البريد الإلكتروني" autocomplete="username" dir="ltr" autocapitalize="off" spellcheck="false">
+<input id="pinpw" type="password" placeholder="كلمة المرور" autocomplete="current-password" dir="ltr" style="margin-top:10px">
 <div id="e_pw" role="alert"></div>
 <div class="acts" style="margin-top:12px">
 <button class="btn" id="pinGo" type="button">دخول</button>
@@ -730,9 +730,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycbwNnvR1vSL88Sx65E9W6heWpOVsZ5Om472TBwHdQ7M-t8fQzqkntOqjKJrl5OApYimG/exec';
-// Registration, dashboard, and ESMS Community all use the same new backend deployment.
-const COMMUNITY_API_URL=API_URL;
+const API_URL='https://script.google.com/macros/s/AKfycbw3VxGEaZRX1NxvViscNK64YN09Ae2EjSnV572A59SP_zjrycn06kBYKVUcejAp1Sex/exec';
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -798,7 +796,7 @@ function apiUrl(action,params={}){
 async function apiFetch(url,opt,ms){
   const ac=new AbortController(),t=setTimeout(()=>ac.abort(),ms);let tx;
   try{const r=await fetch(url,{...opt,signal:ac.signal});tx=await r.text()}
-  catch(e){const er=new Error('تعذر الوصول إلى Google Apps Script. راجع رابط /exec، ثم تأكد من نشر Web App بصلاحية Execute as: Me وAccess: Anyone.');er.code='NETWORK';throw er}
+  catch(e){const er=new Error(msgBuild('connection_failed'));er.code='NETWORK';throw er}
   finally{clearTimeout(t)}
   let j;try{j=JSON.parse(tx)}catch{const er=new Error('رد غير صالح من الخادم');er.code='BAD_RESPONSE';throw er}
   if(!j||j.success===false){const e=new Error(j?.message||j?.error||'فشل الطلب');e.code=j?.error;throw e}
@@ -1509,10 +1507,10 @@ $('photo').onchange=e=>{
   if(f.size>30*1048576){setErr('photo','حجم الصورة أكبر من 30MB',true);return}
   const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{
-    const W=im.naturalWidth,H=im.naturalHeight,s=Math.min(1,640/Math.max(W,H));
+    const W=im.naturalWidth,H=im.naturalHeight,s=Math.min(1,720/Math.max(W,H));
     const c=document.createElement('canvas');c.width=Math.round(W*s);c.height=Math.round(H*s);
     const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(im,0,0,c.width,c.height);
-    photoData=c.toDataURL('image/jpeg',.78);photoFile=f;photoDim=[W,H];URL.revokeObjectURL(u);
+    photoData=c.toDataURL('image/jpeg',.92);photoFile=f;photoDim=[W,H];URL.revokeObjectURL(u);
     $('av').style.backgroundImage='url('+photoData+')';$('av').classList.add('has');
     $('pbt').textContent='تغيير الصورة';
     const low=Math.min(W,H)<400;const m=$('meta');m.className='meta'+(low?' warn':'');
@@ -1709,26 +1707,22 @@ $('lnew').onclick=()=>{resetPaper();$('lq').value='';setSt('idle','جاهز لل
    ═══════════════════════════════════════════════════════════════ */
 let sT=0,sL=0;
 $('adm').onclick=()=>{const n=Date.now();sT=n-sL>2000?1:sT+1;sL=n;if(sT>=15){sT=0;openPin()}};
-let pinOtpSent=false;
-function openPin(){pinOtpSent=false;$('pin').classList.add('show');$('pinem').value='';$('pinem').type='text';$('pinem').inputMode='numeric';$('pinem').placeholder='اضغط دخول لإرسال رمز التحقق';$('pinpw').value='';$('pinpw').style.display='none';$('pinGo').textContent='إرسال رمز الدخول';$('e_pw').textContent='';setTimeout(()=>$('pinem').focus(),250)}
+function openPin(){$('pin').classList.add('show');$('pinem').value='';$('pinpw').value='';$('e_pw').textContent='';setTimeout(()=>$('pinem').focus(),250)}
 $('pinX').onclick=()=>{$('pinpw').value='';$('pin').classList.remove('show')};
 const tryPin=async()=>{
-  const er=$('e_pw'),b=$('pinGo'),otp=$('pinem').value.trim();er.textContent='';b.disabled=true;
+  const er=$('e_pw'),b=$('pinGo'),email=$('pinem').value.trim(),password=$('pinpw').value;er.textContent='';
+  if(!email||!password){er.textContent='اكتب البريد وكلمة المرور';er.style.color='var(--bad)';return}
+  b.disabled=true;
   try{
-    if(!pinOtpSent){
-      const r=await apiGet('request_otp');
-      pinOtpSent=true;$('pinem').value='';$('pinem').placeholder='اكتب رمز التحقق المكوّن من 6 أرقام';$('pinem').maxLength=6;$('pinGo').textContent='تأكيد الرمز';
-      er.textContent=r.message||'تم إرسال رمز الدخول إلى تيليجرام. صالح لمدة دقيقتين.';er.style.color='var(--gold)';$('pinem').focus();return;
-    }
-    if(!/^\d{6}$/.test(otp)){er.textContent='اكتب رمز التحقق المكوّن من 6 أرقام';er.style.color='var(--bad)';return}
-    const r=await apiGet('verify_otp',{otp});
-    ADMIN_TOKEN=r.token||'';if(!ADMIN_TOKEN)throw new Error('الخادم لم يرجع جلسة إدارية');
+    const r=await apiPost({action:'login',email,password});
+    ADMIN_TOKEN=r.token||'';$('pinpw').value='';
+    if(!ADMIN_TOKEN)throw new Error('الخادم لم يرجع جلسة إدارية');
     $('pin').classList.remove('show');await loadAll();openDash();
-  }catch(e){er.textContent=e.message||'تعذر تسجيل الدخول';er.style.color='var(--bad)'}
+  }catch(e){er.textContent=e.code==='WRONG'?'البريد أو كلمة المرور غير صحيحة':(e.message||'تعذر تسجيل الدخول');er.style.color='var(--bad)'}
   finally{b.disabled=false}
 };
 $('pinGo').onclick=tryPin;
-$('pinem').onkeydown=e=>{if(e.key==='Enter')tryPin()};
+['pinem','pinpw'].forEach(i=>$(i).onkeydown=e=>{if(e.key==='Enter')tryPin()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLb();closeShr()}});
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2061,261 +2055,6 @@ new MutationObserver(ms=>{ms.forEach(m=>{
 new MutationObserver(()=>{const k=kind();if(k&&lb&&Date.now()-lt<2500)flash(lb,k)}).observe(t,{attributes:true,attributeFilter:['class']});
 })();
 
-</script>
-<!-- ESMS Community: integrated with the same backend deployment -->
-<style id="cm-css">
-#cmFab{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:16px;z-index:120;border:1px solid var(--gold);background:var(--sol);color:var(--ink);border-radius:999px;padding:10px 18px;font:700 14px Cairo,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}
-#cmBox{position:fixed;inset:0;z-index:130;background:var(--bg);color:var(--ink);overflow:auto;display:none;font-family:Cairo,sans-serif;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
-#cmBox.on{display:block}#cmBox *{box-sizing:border-box}.cmW{max-width:760px;margin:0 auto}.cmH{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cmC{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
-.cmI,.cmT,.cmSel{width:100%;border:1px solid var(--line);background:var(--sol);color:var(--ink);border-radius:10px;padding:10px;font:inherit;margin:4px 0 8px}
-.cmT{resize:vertical;min-height:70px}.cmL{display:block;font-size:13px;color:var(--mut)}
-.cmBt{border:0;background:var(--gold);color:#fff;border-radius:10px;padding:8px 14px;font:700 13px Cairo,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:36px}
-.cmBt.s{background:transparent;color:var(--ink);border:1px solid var(--line)}.cmBt.d{background:var(--bad)}.cmBt:disabled{opacity:.5;cursor:default}.cmBt[aria-pressed=true]{background:var(--gold);color:#fff;border-color:var(--gold)}
-.cmNav,.cmRow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.cmNav{position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:2;overflow-x:auto;flex-wrap:nowrap}.cmNav .cmBt{flex:0 0 auto}
-.cmB{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--gold2);border:1px solid var(--gold);border-radius:999px;padding:0 7px;margin-inline-end:4px}
-.cmM{font-size:13px;min-height:20px;margin:4px 0}.cmM.bad{color:var(--bad)}.cmM.ok{color:var(--ok)}.cmP{white-space:pre-wrap;word-break:break-word;margin:8px 0;line-height:1.7}.cmS{font-size:12px;color:var(--mut)}
-.cmOff{border-inline-start:3px solid var(--gold)}.cmId{display:flex;gap:10px;align-items:center;cursor:default}.cmId[tabindex="0"]{cursor:pointer}.cmId.c .cmAv{width:34px;height:34px;font-size:14px}
-.cmAv{width:48px;height:48px;border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden;flex:0 0 auto}.cmAv img{width:100%;height:100%;object-fit:cover}
-.cmBs{display:flex;flex-wrap:wrap;margin-top:2px}.cmBar{height:8px;border-radius:6px;background:var(--line);overflow:hidden}.cmBar i{display:block;height:100%;background:var(--gold)}
-.cmRep{margin-inline-start:22px;border-inline-start:2px solid var(--line);padding-inline-start:10px}.cmEmpty{text-align:center;color:var(--mut);padding:28px 8px}.cmTag{font-size:11px;border-radius:6px;padding:1px 6px;background:var(--line);color:var(--ink)}
-.cmGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}.cmCode{font:700 20px/1.4 monospace;direction:ltr;text-align:center;background:var(--sol);border:1px dashed var(--gold);border-radius:10px;padding:10px;user-select:all}
-
-/* ESMS Community Chat — responsive, text-safe, polling based */
-.cmChatWrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}.cmChatTop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.cmChatMessages{display:flex;flex-direction:column;gap:8px;max-height:min(58vh,620px);overflow:auto;padding:10px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}.cmMsg{max-width:88%;align-self:flex-start;border:1px solid var(--line);background:var(--card);border-radius:14px 14px 14px 4px;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere}.cmMsg.mine{align-self:flex-end;border-radius:14px 14px 4px 14px;background:var(--sol)}.cmMsgMeta{font-size:11px;opacity:.72;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px}.cmChatCompose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}.cmChatCompose textarea{min-height:44px;max-height:120px;resize:vertical}.cmChatTools{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.cmChatPinned{border:1px solid var(--gold);border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--gold) 9%,transparent);font-size:12px}.cmChatEmpty{padding:24px;text-align:center;opacity:.7}.cmChatGroupSelect{min-width:190px;max-width:100%}@media(max-width:520px){.cmMsg{max-width:96%}.cmChatCompose{grid-template-columns:1fr}.cmChatCompose button{width:100%}.cmChatMessages{max-height:52vh;padding:7px}}
-</style>
-<button id="cmFab" type="button" aria-haspopup="dialog">المجتمع</button>
-<div id="cmBox" role="dialog" aria-modal="true" aria-label="مجتمع ESMS"></div>
-<script id="community-api-bridge">
-// The legacy registration form continues using API_URL. Only c_* community actions use this new endpoint.
-async function communityApiPost(data) {
-  if (!/^https:\/\/script\.google\.com\/macros\/s\//.test(COMMUNITY_API_URL) || COMMUNITY_API_URL.includes('PASTE_NEW_')) {
-    throw new Error('إعداد رابط المجتمع غير مكتمل. ضع رابط Web App الجديد في COMMUNITY_API_URL.');
-  }
-  let response, raw;
-  try {
-    response = await fetch(COMMUNITY_API_URL, {
-      method: 'POST', redirect: 'follow', cache: 'no-store',
-      headers: {'Content-Type': 'text/plain;charset=UTF-8'},
-      body: JSON.stringify(data)
-    });
-    raw = await response.text();
-  } catch (_) {
-    throw new Error('تعذر الاتصال بخادم المجتمع. تحقق من رابط النشر والإنترنت.');
-  }
-  let result;
-  try { result = JSON.parse(raw); }
-  catch (_) { throw new Error('رد غير صالح من خادم المجتمع. تأكد من نشر Web App الصحيح.'); }
-  if (!result || result.success === false) throw new Error(result.message || result.error || 'فشل طلب المجتمع.');
-  return result;
-}
-</script>
-<script id="cm-js">
-(()=>{'use strict';
-const box=document.getElementById('cmBox');
-let T='',ME=null,VIEW='home',AT='login',busy=false,PROFILE=null,AD='requests',TKV='mine',CHAT_TIMER=null,CHAT_GROUP='',CHAT_LAST=0,CHAT_IDS=new Set();
-const h=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a)){if(v==null||v===false)continue;x==='class'?e.className=v:x.startsWith('on')?e[x]=v:e.setAttribute(x,v===true?'':v)}k.flat(9).forEach(c=>e_add(e,c));return e};
-const e_add=(e,c)=>{if(c==null||c===false)return;e.append(c.nodeType?c:document.createTextNode(String(c)))};
-const call=(a,d={})=>communityApiPost({action:a,token:T,...d});
-const $=id=>document.getElementById(id);
-const dt=ms=>ms?new Date(Number(ms)).toLocaleString('ar-EG',{dateStyle:'medium',timeStyle:'short'}):'—';
-const ICON={star:'M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z',shield:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',code:'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16',crown:'M3 8l4 4 5-7 5 7 4-4-2 11H5z',check:'M5 12l5 5 9-10',users:'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3.5 3-5.5 6-5.5s6 2 6 5.5M16 15c3 0 5 1.5 5 5',heart:'M12 20s-8-5-8-11a4.5 4.5 0 018-2.5A4.5 4.5 0 0120 9c0 6-8 11-8 11z',bolt:'M13 3L5 14h6l-1 7 8-11h-6z',flag:'M5 21V4M5 4h11l-2 4 2 4H5',book:'M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 19V5'};
-const NS='http://www.w3.org/2000/svg';
-const svg=n=>{const s=document.createElementNS(NS,'svg');[['viewBox','0 0 24 24'],['width','12'],['height','12'],['fill','none'],['stroke','currentColor'],['stroke-width','2'],['stroke-linecap','round'],['stroke-linejoin','round'],['aria-hidden','true']].forEach(([k,v])=>s.setAttribute(k,v));const p=document.createElementNS(NS,'path');p.setAttribute('d',ICON[n]||ICON.star);s.append(p);return s};
-const badge=b=>{const e=h('span',{class:'cmB',title:b.description||''},svg(b.icon),b.nameAr);if(/^#[0-9a-fA-F]{6}$/.test(b.color||''))e.style.cssText='color:'+b.color+';border-color:'+b.color;return e};
-const idCard=(a,compact)=>{const name=a.name||a.displayName||'عضو';const av=h('div',{class:'cmAv'});const first=(name.trim().charAt(0)||'؟');
- if(a.photoUrl&&/^https:\/\//.test(a.photoUrl)){const im=h('img',{src:a.photoUrl,alt:'',referrerpolicy:'no-referrer'});im.onerror=()=>{im.remove();av.textContent=first};av.append(im)}else av.textContent=first;
- const meta=[a.committee?a.committee.nameAr:'',a.joinedAt&&!compact?'انضم '+dt(a.joinedAt):''].filter(Boolean).join(' · ');
- const c=h('div',{class:'cmId'+(compact?' c':''),tabindex:a.accountId?'0':'-1'},av,h('div',{},h('b',{},name),h('div',{class:'cmBs'},(a.badges||[]).map(badge)),meta?h('div',{class:'cmS'},meta):null));
- if(a.accountId){const open=()=>{PROFILE=a.accountId;go('profile')};c.onclick=open;c.onkeydown=e=>{if(e.key==='Enter')open()}}return c};
-const say=(t,bad)=>{const m=$('cmMsg');if(!m)return;m.textContent=t||'';m.className='cmM'+(t?(bad?' bad':' ok'):'')};
-const fail=e=>{if(e&&(e.code==='UNAUTHENTICATED'||e.code==='ACCOUNT_DISABLED')){const m=e.code==='UNAUTHENTICATED'?'انتهت الجلسة، سجّل الدخول من جديد':e.message;T='';ME=null;shell();say(m,true);return}say((e&&e.message)||'تعذر تنفيذ الطلب',true)};
-const run=async(btn,fn,ok)=>{if(busy)return;busy=true;if(btn)btn.disabled=true;say('');try{const r=await fn();if(ok)say(ok);return r}catch(e){fail(e)}finally{busy=false;if(btn)btn.disabled=false}};
-const btn=(l,fn,cls)=>{const b=h('button',{class:'cmBt '+(cls||''),type:'button'},l);b.onclick=()=>run(b,()=>fn(b));return b};
-const field=(l,a={},tag)=>{const i=h(tag||'input',{class:tag==='textarea'?'cmT':'cmI',autocomplete:'off',...a});return Object.assign(h('label',{class:'cmL'},l,i),{inp:i})};
-const sel=(opts,cls)=>{const s=h('select',{class:'cmSel'});opts.forEach(([v,l])=>s.append(h('option',{value:v},l)));return s};
-const empty=t=>h('div',{class:'cmEmpty'},t);
-const showCode=(r)=>h('div',{class:'cmC cmOff'},h('div',{class:'cmS'},'يظهر هذا الرمز مرة واحدة فقط — سلّمه للعضو بطريقة موثوقة. صالح حتى '+dt(r.expiresAt)),h('div',{class:'cmCode'},r.activationCode),btn('نسخ',async()=>{try{await navigator.clipboard.writeText(r.activationCode);say('تم النسخ')}catch(e){say('انسخ الرمز يدويًا',true)}},'s'));
-const close=()=>{box.classList.remove('on');$('cmFab').focus()};
-$('cmFab').onclick=()=>{box.classList.add('on');shell()};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&box.classList.contains('on'))close()});
-const REACT=[['like','👍'],['love','❤️'],['clap','👏'],['idea','💡']];
-const wrap=()=>{box.replaceChildren();const w=h('div',{class:'cmW'});box.append(w);return w};
-
-/* ───── الدخول / الانضمام / الحالة / التفعيل ───── */
-function authShell(){const w=wrap();w.append(h('div',{class:'cmH'},h('b',{},'مجتمع ESMS'),h('button',{class:'cmBt s',type:'button',onclick:close},'إغلاق')));
- const nav=h('div',{class:'cmNav'});[['login','تسجيل الدخول'],['join','طلب انضمام'],['status','حالة طلبي'],['activate','تفعيل / استعادة']].forEach(([k,l])=>nav.append(h('button',{class:'cmBt s',type:'button','aria-pressed':String(AT===k),onclick:()=>{AT=k;authShell()}},l)));
- const card=h('div',{class:'cmC'});w.append(nav,h('div',{id:'cmMsg',class:'cmM',role:'status'}),card);
- const code=field('الكود الجامعي',{dir:'ltr',autocomplete:'username',inputmode:'numeric'});
- const pw=(l,ac)=>field(l,{type:'password',dir:'ltr',autocomplete:ac});
- if(AT==='login'){const p=pw('كلمة المرور','current-password');card.append(h('p',{class:'cmS'},'ادخل بالكود الجامعي وكلمة المرور.'),code,p,btn('دخول',async()=>{const r=await call('c_login',{memberCode:code.inp.value.trim(),password:p.inp.value});T=r.token;p.inp.value='';ME=(await call('c_me')).me;VIEW='home';shell();render()}))}
- if(AT==='join'||AT==='status'){const nid=field('الرقم القومي (14 رقمًا)',{type:'tel',dir:'ltr',inputmode:'numeric',maxlength:'20'});
-  card.append(h('p',{class:'cmS'},AT==='join'?'يشترط أن تكون مسجّلًا ومقبولًا في ESMS. نتحقق من بياناتك على الخادم فقط ولا نحفظ الرقم القومي.':'اكتب بياناتك نفسها لمعرفة حالة طلبك.'),code,nid,
-  btn(AT==='join'?'إرسال الطلب':'عرض الحالة',async()=>{const d={memberCode:code.inp.value.trim(),nationalId:nid.inp.value};nid.inp.value='';
-   if(AT==='join'){await call('c_request_join',d);AT='status';say('تم استلام طلبك وهو الآن قيد المراجعة. تابع حالته من «حالة طلبي».')}
-   else{const r=await call('c_request_status',d);const M={pending:'طلبك قيد المراجعة من الإدارة.',approved:'تمت الموافقة على طلبك. اطلب رمز التفعيل من الإدارة ثم استخدمه في «تفعيل / استعادة».',rejected:'تم رفض طلبك.'+(r.note?' الملاحظة: '+r.note:'')+(r.canRetryAt&&r.canRetryAt>Date.now()?' يمكنك إعادة التقديم بعد '+dt(r.canRetryAt)+'.':''),active:'حسابك مفعّل. سجّل الدخول.',none:'لا يوجد طلب مسجّل لهذا العضو.'};say(M[r.status]||'—')}}));}
- if(AT==='activate'){const ac=field('رمز التفعيل أو الاستعادة (تصدره الإدارة)',{dir:'ltr'}),p=pw('كلمة المرور الجديدة (10 أحرف على الأقل)','new-password'),dn=field('الاسم الظاهر (اختياري)',{maxlength:'60'});
-  card.append(h('p',{class:'cmS'},'لا يمكن تفعيل الحساب أو استعادته بالكود الجامعي أو الرقم القومي وحدهما؛ يلزم رمز من الإدارة، صالح لمرة واحدة.'),code,ac,dn,p,btn('تأكيد',async()=>{await call('c_activate',{memberCode:code.inp.value.trim(),activationCode:ac.inp.value,password:p.inp.value,displayName:dn.inp.value.trim()});p.inp.value='';ac.inp.value='';AT='login';authShell();say('تم. سجّل الدخول الآن.')}))}}
-
-/* ───── الهيكل بعد الدخول ───── */
-function shell(){if(!T||!ME){authShell();return}
- const w=wrap(),P=ME.permissions||{};
- w.append(h('div',{class:'cmH'},idCard({accountId:ME.accountId,name:ME.displayName,badges:ME.badges,committee:ME.committee},true),h('div',{class:'cmRow'},btn('خروج',async()=>{try{await call('c_logout')}catch(e){}T='';ME=null;AT='login';shell()},'s'),h('button',{class:'cmBt s',type:'button',onclick:close},'إغلاق'))));
- const adm=P['members.activation']||P['members.list']||P['committees.assign']||P['roles.manage']||P['moderation.manage']||P['settings.manage']||P['audit.read'];
- const nav=h('div',{class:'cmNav',id:'cmNav'});[['home','الرئيسية'],['committee','لجنتي'],['chat','المحادثات'],['tasks','المهام'],['polls','الاستطلاعات'],['directory','الأعضاء'],['notifs','الإشعارات'+(ME.unreadNotifications?' ('+ME.unreadNotifications+')':'')],['profile','ملفي'],...(adm?[['admin','الإدارة']]:[])].forEach(([k,l])=>nav.append(h('button',{class:'cmBt s','data-v':k,type:'button','aria-pressed':String(VIEW===k),onclick:()=>{if(k==='profile')PROFILE=null;go(k)}},l)));
- w.append(nav,h('div',{id:'cmMsg',class:'cmM',role:'status'}),h('div',{id:'cmMain'}))}
-function go(v){if(CHAT_TIMER){clearInterval(CHAT_TIMER);CHAT_TIMER=null}VIEW=v;document.querySelectorAll('#cmNav [data-v]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));render()}
-async function render(){if(CHAT_TIMER){clearInterval(CHAT_TIMER);CHAT_TIMER=null}const m=$('cmMain');if(!m)return;say('');m.replaceChildren(h('div',{class:'cmS'},'جارٍ التحميل…'));
- const V={home:m=>feedView(m,'general'),committee:m=>feedView(m,'committee'),chat:chatView,tasks:tasksView,polls:pollsView,directory:dirView,notifs:notifsView,profile:profileView,admin:adminView};
- try{await V[VIEW](m);call('c_me').then(r=>{if(r.me&&ME){ME=r.me;const nb=document.querySelector('#cmNav [data-v=notifs]');if(nb)nb.textContent='الإشعارات'+(ME.unreadNotifications?' ('+ME.unreadNotifications+')':'')}}).catch(()=>{})}catch(e){m.replaceChildren();fail(e)}}
-
-/* ───── المحادثات: رسائل محفوظة بالخادم مع تحديث دوري أثناء فتح الشاشة ───── */
-async function chatView(m){
-  CHAT_LAST=0;CHAT_IDS=new Set();
-  const top=h('div',{class:'cmChatTop'}),groupSel=sel([['','جارٍ تحميل المحادثات…']]),refresh=btn('تحديث',async()=>load(true),'s'),createWrap=h('div',{class:'cmC'}),pinned=h('div'),messages=h('div',{class:'cmChatMessages','aria-live':'polite'}),form=h('div',{class:'cmChatCompose'}),input=h('textarea',{class:'cmI',maxlength:'2000',placeholder:'اكتب رسالتك…','aria-label':'نص الرسالة'}),send=btn('إرسال',async()=>sendMessage(),'p');
-  const canManage=!!(ME&&ME.permissions&&ME.permissions['chat.manage']==='all');
-  top.append(groupSel,refresh);m.replaceChildren(h('div',{class:'cmChatWrap'},top,pinned,messages,form));form.append(input,send);
-  if(canManage){const name=h('input',{class:'cmI',maxlength:'60',placeholder:'اسم المجموعة الجديدة'}),desc=h('input',{class:'cmI',maxlength:'300',placeholder:'وصف مختصر'}),type=sel([['community','مجتمع عام'],['official','رسمي'],['private','خاص'],['committee','لجنة']]),make=btn('إنشاء مجموعة',async()=>{try{if(!name.value.trim())throw new Error('اكتب اسم المجموعة');await call('c_chat_group_save',{name:name.value.trim(),description:desc.value.trim(),type:type.value});name.value='';desc.value='';await loadGroups();say('تم إنشاء المجموعة')}catch(e){fail(e)}},'s');createWrap.append(h('b',{},'إدارة المحادثات'),h('div',{class:'cmGrid'},name,desc,type,make));m.append(createWrap);}
-  let groups=[];
-  async function loadGroups(){const r=await call('c_chat_groups');groups=r.items||[];groupSel.replaceChildren(...groups.map(g=>h('option',{value:g.groupId},g.name+(g.type==='official'?' · رسمي':g.type==='private'?' · خاص':g.type==='committee'?' · لجنة':''))));if(!groups.length){groupSel.append(h('option',{value:''},'لا توجد محادثات متاحة'));CHAT_GROUP='';messages.replaceChildren(h('div',{class:'cmChatEmpty'},'لا توجد محادثات متاحة لحسابك.'));return}if(!groups.some(g=>g.groupId===CHAT_GROUP))CHAT_GROUP=groups[0].groupId;groupSel.value=CHAT_GROUP;await load(true)}
-  async function load(force){if(!CHAT_GROUP)return;try{const r=await call('c_chat_messages',{groupId:CHAT_GROUP,limit:50,after:force?0:CHAT_LAST});if(force){messages.replaceChildren();CHAT_IDS=new Set();CHAT_LAST=0}if(r.group&&r.group.pinnedMessageId){const pm=(r.items||[]).find(x=>x.messageId===r.group.pinnedMessageId);pinned.replaceChildren(pm?h('div',{class:'cmChatPinned'},'📌 رسالة مثبتة: '+pm.body):h('div',{class:'cmChatPinned'},'📌 توجد رسالة مثبتة في المجموعة'))}else pinned.replaceChildren();const list=r.items||[];list.forEach(x=>{if(CHAT_IDS.has(x.messageId))return;CHAT_IDS.add(x.messageId);CHAT_LAST=Math.max(CHAT_LAST,Number(x.createdAt)||0);const meta=h('div',{class:'cmMsgMeta'},h('b',{},x.senderName),h('span',{},dt(x.createdAt)),x.pinned?h('span',{class:'cmTag'},'مثبتة'):null),body=h('div',{},x.body),bubble=h('div',{class:'cmMsg'+(x.mine?' mine':'')},meta,body);if(x.replyTo)bubble.append(h('div',{class:'cmS'},'رد على رسالة سابقة'));if(!x.deleted){const tools=h('div',{class:'cmChatTools'});tools.append(btn('👍',async()=>{try{await call('c_chat_react',{messageId:x.messageId,kind:'like'});await load(true)}catch(e){fail(e)}},'s'));if(x.canDelete)tools.append(btn('حذف',async()=>{if(!confirm('متأكد من حذف الرسالة؟'))return;try{await call('c_chat_delete',{messageId:x.messageId});await load(true)}catch(e){fail(e)}},'s'));if(canManage)tools.append(btn(x.pinned?'إلغاء التثبيت':'تثبيت',async()=>{try{await call('c_chat_pin',{messageId:x.messageId,pinned:!x.pinned});await load(true)}catch(e){fail(e)}},'s'));tools.append(btn('رد',()=>{input.placeholder='الرد على '+x.senderName+'…';input.dataset.reply=x.messageId;input.focus()},'s'));bubble.append(tools)}messages.append(bubble)});if(force||list.length)messages.scrollTop=messages.scrollHeight;if(!list.length&&!messages.children.length)messages.append(h('div',{class:'cmChatEmpty'},'ابدأ المحادثة برسالة محترمة'))}catch(e){if(force)fail(e)}}
-  async function sendMessage(){const body=input.value.trim();if(!body)return;send.disabled=true;try{const d={groupId:CHAT_GROUP,body};if(input.dataset.reply)d.replyTo=input.dataset.reply;await call('c_chat_send',d);input.value='';delete input.dataset.reply;input.placeholder='اكتب رسالتك…';await load(true)}catch(e){fail(e)}finally{send.disabled=false;input.focus()}}
-  groupSel.onchange=async()=>{CHAT_GROUP=groupSel.value;CHAT_LAST=0;CHAT_IDS=new Set();await load(true)};input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});await loadGroups();CHAT_TIMER=setInterval(()=>{if(VIEW==='chat')load(false)},5000);
-}
-/* ───── المنشورات والتعليقات والتفاعلات ───── */
-function mentionBox(list){const chips=h('span',{class:'cmS'}),host=h('div',{class:'cmRow'});const draw=()=>{chips.replaceChildren(...list.map(x=>h('span',{class:'cmTag'},'@'+x.name+' ')))};
- const add=btn('@ إشارة',async()=>{const r=await call('c_directory',{limit:50});const s=sel([['','اختر عضوًا'],...r.items.filter(i=>i.accountId!==ME.accountId).map(i=>[i.accountId,i.displayName])]);
-  s.onchange=()=>{const o=r.items.find(i=>i.accountId===s.value);if(o&&list.length<5&&!list.some(x=>x.id===o.accountId)){list.push({id:o.accountId,name:o.displayName});draw()}s.remove()};host.append(s)},'s');
- host.append(add,chips);return{node:host,ids:()=>list.map(x=>x.id),reset:()=>{list.length=0;draw()}}}
-const reactBar=(type,id,r)=>{const bar=h('span',{class:'cmRow'});const paint=x=>{bar.replaceChildren(...REACT.map(([k,e])=>{const b=h('button',{class:'cmBt s',type:'button','aria-pressed':String(x.mine===k),title:k},e+' '+(x.counts[k]||0));b.onclick=()=>run(b,async()=>{paint((await call('c_react',{targetType:type,targetId:id,kind:k})).reactions)});return b}))};paint(r);return bar};
-function commentsPanel(po,counter){const host=h('div'),listEl=h('div');let parent=null,all=[];
- const ta=h('textarea',{class:'cmT',maxlength:'1000',rows:'2',placeholder:'اكتب تعليقًا…'}),men=mentionBox([]),info=h('div',{class:'cmS'});
- const draw=()=>{listEl.replaceChildren();if(!all.length)listEl.append(empty('لا تعليقات بعد'));const one=(c,rep)=>{const row=h('div',{class:'cmC'+(rep?' cmRep':'')},idCard(c.author,true),h('div',{class:'cmP'},c.body),h('div',{class:'cmRow'},reactBar('comment',c.commentId,c.reactions),rep?null:btn('رد',async()=>{parent=c;info.textContent='الرد على '+c.author.name;ta.focus()},'s'),
-   c.canDelete?btn('حذف',async()=>{if(!confirm('حذف التعليق؟'))return;await call('c_comment_delete',{commentId:c.commentId});await load()},'s'):null,btn('إبلاغ',async()=>{const r=prompt('سبب الإبلاغ؟');if(!r)return;await call('c_report_create',{targetType:'comment',targetId:c.commentId,reason:r});say('تم إرسال البلاغ للإدارة')},'s')));return row};
-  all.filter(c=>!c.parentId).forEach(c=>{listEl.append(one(c,false));all.filter(r=>r.parentId===c.commentId).forEach(r=>listEl.append(one(r,true)))})};
- const load=async()=>{all=(await call('c_comments',{postId:po.postId})).items;counter(all.length);draw()};
- host.append(listEl,info,ta,men.node,btn('إرسال التعليق',async()=>{await call('c_comment_create',{postId:po.postId,body:ta.value,parentId:parent?parent.commentId:undefined,mentions:men.ids()});ta.value='';parent=null;info.textContent='';men.reset();await load()}));
- return{node:host,load}}
-function postCard(po,refresh){const cnt=h('span',{},String(po.commentCount));const body=h('div',{class:'cmP'},po.body);const card=h('div',{class:'cmC'+(po.official?' cmOff':'')});
- const tag=[po.pinned?'مثبّت':'',po.official?'إعلان رسمي':''].filter(Boolean).map(t=>h('span',{class:'cmTag'},t));
- let panel=null;const cm=commentsPanel(po,n=>{cnt.textContent=String(n)});const holder=h('div');
- card.append(h('div',{class:'cmH'},idCard(po.author,true),h('div',{class:'cmS'},dt(po.createdAt)+(po.editedAt?' (معدّل)':''))),tag.length?h('div',{class:'cmRow'},tag):null,body,
-  h('div',{class:'cmRow'},reactBar('post',po.postId,po.reactions),btn(h('span',{},'تعليقات ',cnt),async()=>{if(panel){panel=null;holder.replaceChildren();return}panel=cm.node;holder.append(panel);await cm.load()},'s'),
-  po.canEdit?btn('تعديل',async()=>{const ta=h('textarea',{class:'cmT',maxlength:'2000'});ta.value=po.body;const row=h('div',{},ta,btn('حفظ',async()=>{await call('c_post_edit',{postId:po.postId,body:ta.value});refresh()}),' ',h('button',{class:'cmBt s',type:'button',onclick:()=>row.remove()},'إلغاء'));card.append(row)},'s'):null,
-  po.canDelete?btn('حذف',async()=>{if(!confirm('حذف المنشور؟'))return;await call('c_post_delete',{postId:po.postId});refresh()},'s'):null,
-  btn('إبلاغ',async()=>{const r=prompt('سبب الإبلاغ؟');if(!r)return;await call('c_report_create',{targetType:'post',targetId:po.postId,reason:r});say('تم إرسال البلاغ للإدارة')},'s')),holder);return card}
-async function feedView(m,scope){if(scope==='committee'&&!ME.committee){m.replaceChildren(empty('لم تُعيَّن في لجنة بعد. تواصل مع الإدارة لتعيينك.'));return}
- const P=ME.permissions||{},canAnn=scope==='general'?P['announce.post']==='all':!!P['announce.post'];let items=[],total=0,q='';
- const ta=h('textarea',{class:'cmT',maxlength:'2000',rows:'3',placeholder:scope==='general'?'شارك المجتمع…':'اكتب لأعضاء '+ME.committee.nameAr+'…'}),ann=canAnn?h('input',{type:'checkbox'}):null,men=mentionBox([]);
- const listEl=h('div'),more=h('div'),search=h('input',{class:'cmI',placeholder:'بحث في المنشورات المحمّلة…',oninput:()=>draw()});
- const draw=()=>{listEl.replaceChildren();const qq=search.value.trim().toLowerCase();const v=items.filter(p=>!qq||p.body.toLowerCase().includes(qq)||p.author.name.toLowerCase().includes(qq));if(!v.length)listEl.append(empty(items.length?'لا نتائج':'لا منشورات بعد'));v.forEach(p=>listEl.append(postCard(p,()=>load(true))));more.replaceChildren(items.length<total?btn('عرض المزيد',async()=>load(false),'s'):'')};
- const load=async(reset)=>{const r=await call('c_feed',{scope,offset:reset?0:items.length,limit:20});total=r.total;items=reset?r.items:items.concat(r.items);draw()};
- m.replaceChildren(h('div',{class:'cmC'},ta,ann?h('label',{class:'cmS'},ann,' إعلان رسمي مثبّت'):null,men.node,btn('نشر',async()=>{await call('c_post_create',{scope,body:ta.value,official:ann?ann.checked:false,pinned:ann?ann.checked:false,mentions:men.ids()});ta.value='';men.reset();if(ann)ann.checked=false;await load(true)})),search,listEl,more);await load(true)}
-
-/* ───── الإشعارات ───── */
-async function notifsView(m){const r=await call('c_notifications',{limit:50});const list=h('div');
- const draw=r=>{list.replaceChildren();if(!r.items.length)list.append(empty('لا إشعارات'));r.items.forEach(n=>list.append(h('div',{class:'cmC'+(n.read?'':' cmOff')},h('div',{},n.title),h('div',{class:'cmS'},dt(n.createdAt)),h('div',{class:'cmRow'},n.read?null:btn('تعليم كمقروء',async()=>{await call('c_notif_read',{notifId:n.notifId});render()},'s'),n.refType==='task'?btn('فتح المهمة',async()=>{VIEW='tasks';TKV='open:'+n.refId;await call('c_notif_read',{notifId:n.notifId});shell();render()},'s'):n.refType==='post'?btn('فتح المجتمع',async()=>{await call('c_notif_read',{notifId:n.notifId});go('home')},'s'):null))))};
- m.replaceChildren(h('div',{class:'cmRow'},btn('تعليم الكل كمقروء',async()=>{await call('c_notif_read',{all:true});ME.unreadNotifications=0;render()},'s')),list);draw(r)}
-
-/* ───── دليل الأعضاء والملف الشخصي ───── */
-async function dirView(m){const [cm,bd]=await Promise.all([call('c_committees'),call('c_badges')]);const q=h('input',{class:'cmI',placeholder:'ابحث بالاسم'}),sc=sel([['','كل اللجان'],...cm.items.filter(c=>c.active).map(c=>[c.key,c.nameAr])]),sb=sel([['','كل الشارات'],...bd.items.filter(b=>b.active).map(b=>[b.key,b.nameAr])]);
- const out=h('div',{class:'cmGrid'}),more=h('div');let items=[],total=0;
- const draw=()=>{out.replaceChildren();if(!items.length)out.append(empty('لا نتائج'));items.forEach(i=>out.append(h('div',{class:'cmC'},idCard(i,false))));more.replaceChildren(items.length<total?btn('عرض المزيد',()=>load(false),'s'):'')};
- const load=async reset=>{const r=await call('c_directory',{q:q.value.trim(),committee:sc.value,badge:sb.value,offset:reset?0:items.length,limit:30});total=r.total;items=reset?r.items:items.concat(r.items);draw()};
- m.replaceChildren(h('div',{class:'cmC'},q,h('div',{class:'cmRow'},sc,sb),btn('بحث',()=>load(true))),out,more);await load(true)}
-async function profileView(m){const r=await call('c_profile',PROFILE?{accountId:PROFILE}:{});const p=r.profile;const c=h('div',{class:'cmC'},idCard({accountId:null,name:p.displayName,badges:p.badges,committee:p.committee,joinedAt:p.joinedAt,photoUrl:p.photoUrl},false),h('div',{class:'cmP'},p.bio||'لا توجد نبذة.'),h('div',{class:'cmS'},'المنشورات: '+p.stats.posts+' · التعليقات: '+p.stats.comments));
- m.replaceChildren(c);if(!p.isMe)return;const bio=h('textarea',{class:'cmT',maxlength:'280'});bio.value=p.bio||'';c.append(h('label',{class:'cmL'},'نبذتي (اختياري، حتى 280 حرفًا)',bio),btn('حفظ النبذة',async()=>{await call('c_profile_update',{bio:bio.value});render()}));
- const act=await call('c_my_activity');const L={'post.create':'نشرت منشورًا','comment.create':'أضفت تعليقًا','account.activate':'فعّلت حسابك','account.reset':'استعدت حسابك','request.create':'قدّمت طلب انضمام'};
- m.append(h('div',{class:'cmC'},h('b',{},'نشاطي'),act.items.length?act.items.slice(0,25).map(i=>h('div',{class:'cmS'},dt(i.ts)+' — '+(L[i.action]||i.action))):empty('لا نشاط بعد')))}
-
-/* ───── المهام والتسليمات ───── */
-const ST={open:'مفتوحة',in_progress:'قيد التنفيذ',submitted:'بانتظار المراجعة',changes_requested:'مطلوب تعديل',done:'مكتملة',cancelled:'ملغاة'},PR={low:'منخفضة',normal:'عادية',high:'عالية'};
-const toMs=v=>v?new Date(v).getTime():undefined;
-async function tasksView(m){const P=ME.permissions||{},canCreate=!!P['task.create'];
- if(String(TKV).startsWith('open:')){const id=TKV.slice(5);TKV='mine';return taskDetail(m,id)}
- const tabs=h('div',{class:'cmNav'});[['mine','مهامي'],['all','كل ما أراه'],...(canCreate?[['manage','إدارة المهام']]:[])].forEach(([k,l])=>tabs.append(h('button',{class:'cmBt s',type:'button','aria-pressed':String(TKV===k),onclick:()=>{TKV=k;render()}},l)));
- const r=await call('c_tasks',{view:TKV,limit:50}),list=h('div');if(!r.items.length)list.append(empty('لا مهام'));
- r.items.forEach(t=>list.append(h('div',{class:'cmC'+(t.priority==='high'?' cmOff':'')},h('b',{},t.title),h('div',{class:'cmRow'},h('span',{class:'cmTag'},ST[t.status]||t.status),h('span',{class:'cmTag'},'الأولوية: '+(PR[t.priority]||t.priority)),t.dueAt?h('span',{class:'cmTag'},'الموعد: '+dt(t.dueAt)):null,t.committee?h('span',{class:'cmTag'},t.committee.nameAr):null),t.assignee?idCard(t.assignee,true):h('div',{class:'cmS'},'مسندة للجنة بالكامل'),h('div',{class:'cmRow'},btn('فتح',async()=>{TKV='open:'+t.taskId;render()},'s')))));
- m.replaceChildren(tabs,list);if(canCreate&&TKV==='manage')m.prepend(await taskForm(P))}
-async function taskForm(P){const own=P['task.create']==='own_committee';const [cm,dr]=await Promise.all([call('c_committees'),call('c_directory',{limit:50})]);
- const ti=field('عنوان المهمة',{maxlength:'120'}),de=field('الوصف',{maxlength:'1000',rows:'3'},'textarea'),pr=sel([['normal','أولوية عادية'],['high','أولوية عالية'],['low','أولوية منخفضة']]),du=field('الموعد النهائي (اختياري)',{type:'datetime-local'}),kind=sel([['committee','لجنة بالكامل'],['member','عضو محدد']]);
- const cs=sel(cm.items.filter(c=>c.active&&(!own||(ME.committee&&c.key===ME.committee.key))).map(c=>[c.key,c.nameAr])),ms=sel(dr.items.filter(i=>!own||(i.committee&&ME.committee&&i.committee.key===ME.committee.key)).map(i=>[i.accountId,i.displayName]));
- const sync=()=>{cs.style.display=kind.value==='committee'?'':'none';ms.style.display=kind.value==='member'?'':'none'};kind.onchange=sync;sync();
- return h('div',{class:'cmC'},h('b',{},'مهمة جديدة'),ti,de,h('div',{class:'cmRow'},pr,kind),cs,ms,du,btn('إنشاء المهمة',async()=>{await call('c_task_create',{title:ti.inp.value,description:de.inp.value,priority:pr.value,dueAt:toMs(du.inp.value),...(kind.value==='committee'?{committeeKey:cs.value}:{assigneeAccountId:ms.value})});render()}))}
-async function taskDetail(m,id){const r=await call('c_task_detail',{taskId:id}),t=r.task;const root=h('div');
- root.append(h('div',{class:'cmRow'},btn('رجوع',async()=>render(),'s')),h('div',{class:'cmC'},h('b',{},t.title),h('div',{class:'cmP'},t.description||'—'),h('div',{class:'cmRow'},h('span',{class:'cmTag'},ST[t.status]),h('span',{class:'cmTag'},'الأولوية: '+PR[t.priority]),t.dueAt?h('span',{class:'cmTag'},'الموعد: '+dt(t.dueAt)):null,t.committee?h('span',{class:'cmTag'},t.committee.nameAr):null),t.assignee?idCard(t.assignee,true):h('div',{class:'cmS'},'مسندة للجنة بالكامل')));
- const mineish=t.mine||(!t.assignee&&ME.committee&&t.committee&&t.committee.key===ME.committee.key);
- if(mineish&&['open','changes_requested'].includes(t.status))root.append(h('div',{class:'cmRow'},btn('بدء العمل',async()=>{await call('c_task_status',{taskId:id,status:'in_progress'});render()},'s')));
- if(mineish&&['open','in_progress','changes_requested'].includes(t.status)){const b=field('التسليم',{maxlength:'2000',rows:'3'},'textarea'),l=field('رابط الملف (https، اختياري)',{dir:'ltr'});root.append(h('div',{class:'cmC'},b,l,btn('تسليم',async()=>{await call('c_task_submit',{taskId:id,body:b.inp.value,link:l.inp.value.trim()});TKV='open:'+id;render()})))}
- if(t.canManage&&['open','in_progress','changes_requested'].includes(t.status))root.append(h('div',{class:'cmRow'},btn('إلغاء المهمة',async()=>{if(!confirm('إلغاء المهمة؟'))return;await call('c_task_status',{taskId:id,status:'cancelled'});TKV='open:'+id;render()},'d')));
- if(t.canManage&&t.status==='cancelled')root.append(h('div',{class:'cmRow'},btn('إعادة فتح',async()=>{await call('c_task_status',{taskId:id,status:'open'});TKV='open:'+id;render()},'s')));
- root.append(h('b',{},'التسليمات'));if(!r.submissions.length)root.append(empty('لا تسليمات بعد'));
- r.submissions.forEach(s=>{const c=h('div',{class:'cmC'},s.author?idCard(s.author,true):null,h('div',{class:'cmP'},s.body),s.link&&/^https:\/\//.test(s.link)?h('a',{href:s.link,target:'_blank',rel:'noopener noreferrer',dir:'ltr'},s.link):null,h('div',{class:'cmS'},dt(s.createdAt)+' — '+({pending:'بانتظار المراجعة',accepted:'مقبول',changes_requested:'مطلوب تعديل'}[s.status]||s.status)),s.feedback?h('div',{class:'cmS'},'ملاحظة: '+s.feedback):null);
-  if(t.canManage&&s.status==='pending'){const fb=h('input',{class:'cmI',maxlength:'500',placeholder:'ملاحظة للعضو (اختياري)'});c.append(fb,h('div',{class:'cmRow'},btn('قبول',async()=>{await call('c_task_review',{submissionId:s.submissionId,decision:'accept',feedback:fb.value});TKV='open:'+id;render()}),btn('طلب تعديل',async()=>{await call('c_task_review',{submissionId:s.submissionId,decision:'changes',feedback:fb.value});TKV='open:'+id;render()},'s')))}root.append(c)});
- m.replaceChildren(root)}
-
-/* ───── الاستطلاعات ───── */
-async function pollsView(m){const P=ME.permissions||{},r=await call('c_polls');const list=h('div');if(!r.items.length)list.append(empty('لا استطلاعات'));
- r.items.forEach(p=>{const c=h('div',{class:'cmC'},h('b',{},p.question),h('div',{class:'cmRow'},h('span',{class:'cmTag'},p.closed?'مغلق':'ينتهي '+dt(p.closesAt)),p.multi?h('span',{class:'cmTag'},'متعدد الاختيارات'):null,p.anonymous?h('span',{class:'cmTag'},'تصويت مجهول'):null,p.committee?h('span',{class:'cmTag'},p.committee.nameAr):h('span',{class:'cmTag'},'للجميع')));
-  const canVote=!!p.canVote,picks=[];
-  p.options.forEach(o=>{const hasR=o.votes!==undefined,pct=hasR&&p.totalVoters?Math.round(o.votes*100/p.totalVoters):0;
-   const row=h('div',{class:'cmRow'});if(canVote){const i=h('input',{type:p.multi?'checkbox':'radio',name:'pl'+p.pollId,value:o.id});picks.push(i);row.append(h('label',{},i,' '+o.label))}else row.append(h('span',{},(p.myVote&&p.myVote.includes(o.id)?'✓ ':'')+o.label));
-   c.append(row);if(hasR)c.append(h('div',{class:'cmBar'},h('i',{style:'width:'+pct+'%'})),h('div',{class:'cmS'},o.votes+' صوت ('+pct+'%)'))});
-  if(p.totalVoters!==undefined)c.append(h('div',{class:'cmS'},'عدد المصوّتين: '+p.totalVoters));else c.append(h('div',{class:'cmS'},'تظهر النتائج بعد إغلاق الاستطلاع'));
-  if(p.voters&&p.voters.length)c.append(h('div',{class:'cmS'},'المصوّتون: '+p.voters.map(v=>v.name).join('، ')));
-  if(canVote)c.append(btn('تصويت',async()=>{const ids=picks.filter(i=>i.checked).map(i=>i.value);if(!ids.length){say('اختر خيارًا أولًا',true);return}await call('c_poll_vote',{pollId:p.pollId,optionIds:ids});render()}));
-  list.append(c)});
- m.replaceChildren(list);if(P['poll.create'])m.prepend(await pollForm(P))}
-async function pollForm(P){const own=P['poll.create']==='own_committee',cm=await call('c_committees');
- const q=field('سؤال الاستطلاع',{maxlength:'200'}),o=field('الخيارات (خيار في كل سطر، من 2 إلى 8)',{rows:'4'},'textarea'),cl=field('موعد الإغلاق',{type:'datetime-local'}),multi=h('input',{type:'checkbox'}),an=h('input',{type:'checkbox'}),
- aud=sel(own?[['committee','أعضاء لجنتي']]:[['all','كل الأعضاء'],['committee','لجنة محددة']]),cs=sel(cm.items.filter(c=>c.active&&(!own||(ME.committee&&c.key===ME.committee.key))).map(c=>[c.key,c.nameAr])),sr=sel([['live','النتائج فورية'],['after_close','النتائج بعد الإغلاق']]);
- const sync=()=>{cs.style.display=aud.value==='committee'?'':'none'};aud.onchange=sync;sync();
- return h('div',{class:'cmC'},h('b',{},'استطلاع جديد'),q,o,cl,h('div',{class:'cmRow'},aud,cs,sr),h('label',{class:'cmS'},multi,' السماح بأكثر من اختيار'),' ',h('label',{class:'cmS'},an,' تصويت مجهول'),h('div',{},btn('نشر الاستطلاع',async()=>{await call('c_poll_create',{question:q.inp.value,options:o.inp.value.split('\n').map(x=>x.trim()).filter(Boolean),closesAt:toMs(cl.inp.value),multi:multi.checked,anonymous:an.checked,audience:aud.value,committeeKey:aud.value==='committee'?cs.value:undefined,showResults:sr.value});render()})))}
-
-/* ───── لوحة الإدارة ───── */
-async function adminView(m){const P=ME.permissions||{};
- const T2=[['requests','الطلبات',P['members.activation']],['members','الأعضاء والحسابات',P['members.list']],['committees','اللجان',P['committees.assign']],['badges','الشارات',P['roles.manage']],['chats','المحادثات',P['chat.manage']],['reports','البلاغات',P['moderation.manage']],['settings','الإعدادات',P['settings.manage']],['audit','سجل التدقيق',P['audit.read']]].filter(x=>x[2]);
- if(!T2.some(x=>x[0]===AD))AD=T2[0][0];
- const nav=h('div',{class:'cmNav'});T2.forEach(([k,l])=>nav.append(h('button',{class:'cmBt s',type:'button','aria-pressed':String(AD===k),onclick:()=>{AD=k;render()}},l)));
- const body=h('div');m.replaceChildren(nav,body);await ({requests:reqPanel,members:memPanel,committees:cmPanel,badges:bdPanel,chats:chatAdminPanel,reports:rpPanel,settings:setPanel,audit:audPanel}[AD])(body)}
-async function chatAdminPanel(b){const [r,cm]=await Promise.all([call('c_chat_admin_groups'),call('c_committees')]);const list=h('div',{class:'cmGrid'}),name=h('input',{class:'cmI',maxlength:'60',placeholder:'اسم المجموعة'}),desc=h('input',{class:'cmI',maxlength:'300',placeholder:'وصف المجموعة'}),type=sel([['community','مجتمع عام'],['official','رسمي'],['private','خاص'],['committee','لجنة']]),committee=sel([['','بدون لجنة'],...cm.items.filter(x=>x.active).map(x=>[x.committeeId,x.nameAr])]),create=btn('إنشاء مجموعة',async()=>{try{if(!name.value.trim())throw new Error('اسم المجموعة مطلوب');await call('c_chat_group_save',{name:name.value.trim(),description:desc.value.trim(),type:type.value,committeeId:committee.value});name.value='';desc.value='';await render()}catch(e){fail(e)}},'p');b.append(h('div',{class:'cmC'},h('b',{},'إنشاء مجموعة جديدة'),h('div',{class:'cmGrid'},name,desc,type,committee,create)),list);r.items.forEach(g=>{const c=h('div',{class:'cmC'},h('b',{},g.name),h('div',{class:'cmS'},'النوع: '+({community:'مجتمع عام',official:'رسمي',private:'خاص',committee:'لجنة'}[g.type]||g.type)+' · '+(g.active?'نشطة':'مؤرشفة')),g.description?h('p',{class:'cmS'},g.description):null,h('div',{class:'cmRow'},btn(g.active?'أرشفة':'إعادة تفعيل',async()=>{try{await call('c_chat_group_save',{groupId:g.groupId,name:g.name,description:g.description,type:g.type,committeeId:g.committeeId,active:!g.active});await render()}catch(e){fail(e)}},'s')));list.append(c)});if(!r.items.length)list.append(empty('لا توجد مجموعات بعد'))}
-async function reqPanel(b){const st=sel([['pending','قيد المراجعة'],['approved','موافق عليها'],['rejected','مرفوضة'],['','الكل']]);st.value=AD_ST||'pending';st.onchange=()=>{AD_ST=st.value;render()};
- const r=await call('c_admin_requests',{status:st.value,limit:100}),list=h('div');if(!r.items.length)list.append(empty('لا طلبات'));
- r.items.forEach(i=>{const c=h('div',{class:'cmC'},h('b',{},i.name||'—'),h('div',{class:'cmS'},'الكود: '+i.memberCode+' · '+dt(i.requestedAt)),h('div',{class:'cmRow'},h('span',{class:'cmTag'},{pending:'قيد المراجعة',approved:'موافق عليه',rejected:'مرفوض'}[i.status]),h('span',{class:'cmTag'},i.registrationStatus==='accepted'?'مقبول في التسجيل الأصلي':'غير مقبول في التسجيل الأصلي')),i.note?h('div',{class:'cmS'},'ملاحظة: '+i.note):null);
-  if(i.status==='pending'){const n=h('input',{class:'cmI',maxlength:'300',placeholder:'ملاحظة إدارية (اختياري)'});c.append(n,h('div',{class:'cmRow'},btn('قبول',async()=>{const x=await call('c_admin_decide_request',{requestId:i.requestId,decision:'approve',note:n.value});c.replaceChildren(h('b',{},i.name),showCode(x))}),btn('رفض',async()=>{if(!confirm('رفض الطلب؟'))return;await call('c_admin_decide_request',{requestId:i.requestId,decision:'reject',note:n.value});render()},'d')))}
-  if(i.status==='approved')c.append(h('div',{class:'cmRow'},btn('إصدار رمز تفعيل جديد (يُبطل القديم)',async()=>{c.append(showCode(await call('c_admin_issue_code',{memberCode:i.memberCode,purpose:'activate'})))},'s')));list.append(c)});
- b.replaceChildren(st,list)}
-let AD_ST='pending',AD_Q='';
-async function memPanel(b){const [cm,bd,r0]=await Promise.all([call('c_committees'),call('c_badges'),call('c_admin_list_members',{limit:100})]);const r={items:r0.items,total:r0.total},moreB=h('div');
- const q=h('input',{class:'cmI',placeholder:'بحث بالاسم أو الكود',value:AD_Q,oninput:()=>{AD_Q=q.value;draw()}}),list=h('div');
- const ROLES=[['admin','مدير'],['board','بورد'],['deputy','نائب'],['head','رئيس لجنة'],['developer','مطوّر']];
- const draw=()=>{list.replaceChildren();moreB.replaceChildren(r.items.length<r.total?btn('عرض المزيد من الأعضاء',async()=>{const x=await call('c_admin_list_members',{limit:100,offset:r.items.length});r.items=r.items.concat(x.items);r.total=x.total;draw()},'s'):'');const qq=AD_Q.trim().toLowerCase();r.items.filter(i=>!qq||i.displayName.toLowerCase().includes(qq)||i.memberCode.toLowerCase().includes(qq)).forEach(i=>{const c=h('div',{class:'cmC'}),det=h('div');
-  c.append(h('div',{class:'cmH'},h('div',{},h('b',{},i.displayName),h('div',{class:'cmS'},i.memberCode+' · '+{active:'نشط',suspended:'معلّق',ended:'منتهي'}[i.status]+' · '+(i.committee||'بدون لجنة')+' · '+(i.roles.join('+')||'عضو'))),h('button',{class:'cmBt s',type:'button',onclick:()=>{det.hasChildNodes()?det.replaceChildren():open(i,det)}},'إدارة')),det);list.append(c)})};
- const open=(i,det)=>{const act=(l,fn,cls)=>btn(l,async()=>{await fn();render()},cls||'s');const cs=sel(cm.items.filter(c=>c.active).map(c=>[c.key,c.nameAr])),rs=sel(ROLES),bs=sel(bd.items.filter(x=>x.active).map(x=>[x.key,x.nameAr]));
-  det.append(h('div',{class:'cmRow'},i.status!=='suspended'?act('تعليق',async()=>{if(confirm('تعليق الحساب وإبطال جلساته؟'))await call('c_admin_set_status',{memberCode:i.memberCode,status:'suspended'})},'d'):null,i.status!=='active'?act('إعادة تفعيل',()=>call('c_admin_set_status',{memberCode:i.memberCode,status:'active'})):null,i.status!=='ended'?act('إنهاء العضوية',async()=>{if(confirm('إنهاء العضوية؟ تُزال اللجنة والأدوار وتُبطل الجلسات.'))await call('c_admin_set_status',{memberCode:i.memberCode,status:'ended'})},'d'):null,
-   btn('رمز استعادة',async()=>{det.append(showCode(await call('c_admin_issue_code',{memberCode:i.memberCode,purpose:'reset'})))},'s')),
-   h('div',{class:'cmRow'},cs,act('تعيين اللجنة',()=>call('c_admin_assign_committee',{memberCode:i.memberCode,committeeKey:cs.value}))),
-   h('div',{class:'cmRow'},rs,act('منح دور',()=>call('c_admin_grant_role',{memberCode:i.memberCode,role:rs.value})),act('سحب دور',()=>call('c_admin_revoke_role',{memberCode:i.memberCode,role:rs.value}))),
-   h('div',{class:'cmRow'},bs,act('منح شارة',()=>call('c_admin_badge_grant',{memberCode:i.memberCode,badgeKey:bs.value})),act('سحب شارة',()=>call('c_admin_badge_revoke',{memberCode:i.memberCode,badgeKey:bs.value}))))};
- const ops=sel([['assign_committee','تعيين لجنة'],['grant_badge','منح شارة'],['revoke_badge','سحب شارة']]),val=sel([]),codes=h('textarea',{class:'cmT',placeholder:'أكواد الأعضاء (مفصولة بمسافة أو سطر)',dir:'ltr'}),res=h('div',{class:'cmS'});
- const fill=()=>{val.replaceChildren();(ops.value==='assign_committee'?cm.items.filter(c=>c.active).map(c=>[c.key,c.nameAr]):bd.items.filter(x=>x.active).map(x=>[x.key,x.nameAr])).forEach(([v,l])=>val.append(h('option',{value:v},l)))};ops.onchange=fill;fill();
- const bulk=h('div',{class:'cmC'},h('b',{},'تعديل جماعي'),codes,h('div',{class:'cmRow'},ops,val),btn('تطبيق',async()=>{const list=codes.value.split(/[\s,،]+/).filter(Boolean);if(!list.length){say('أدخل الأكواد',true);return}if(!confirm('تطبيق «'+ops.options[ops.selectedIndex].text+' / '+val.options[val.selectedIndex].text+'» على '+list.length+' عضو؟'))return;const x=await call('c_admin_bulk',{op:ops.value,value:val.value,memberCodes:list});res.textContent='تم: '+x.done+' · تعذّر: '+x.failed.length+(x.failed.length?' ('+x.failed.map(f=>f.memberCode+':'+f.error).join('، ')+')':'')}),res);
- b.replaceChildren(q,list,moreB,bulk);draw()}
-async function cmPanel(b){const r=await call('c_committees'),k=field('المفتاح (حروف كبيرة 2–6)',{maxlength:'6',dir:'ltr'}),n=field('الاسم العربي',{maxlength:'60'}),a=h('input',{type:'checkbox',checked:true});
- b.replaceChildren(h('div',{class:'cmC'},h('b',{},'إضافة / تعديل لجنة'),k,n,h('label',{class:'cmS'},a,' نشطة'),btn('حفظ',async()=>{await call('c_admin_committee_save',{key:k.inp.value.trim().toUpperCase(),nameAr:n.inp.value,active:a.checked});render()})),
- ...r.items.map(c=>h('div',{class:'cmC'},h('b',{},c.key+' — '+c.nameAr),h('span',{class:'cmTag'},c.active?'نشطة':'غير نشطة'),' ',h('button',{class:'cmBt s',type:'button',onclick:()=>{k.inp.value=c.key;n.inp.value=c.nameAr;a.checked=c.active}},'تعديل'))))}
-async function bdPanel(b){const r=await call('c_badges'),k=field('المفتاح (حروف صغيرة/أرقام)',{maxlength:'20',dir:'ltr'}),n=field('الاسم',{maxlength:'30'}),co=h('input',{type:'color',value:'#b8923a',class:'cmI'}),ic=sel(Object.keys(ICON).map(x=>[x,x])),d=field('الوصف',{maxlength:'100'}),a=h('input',{type:'checkbox',checked:true});
- b.replaceChildren(h('div',{class:'cmC'},h('b',{},'إضافة / تعديل شارة'),h('div',{class:'cmS'},'الشارة وسم عرض فقط ولا تمنح أي صلاحية. الصلاحيات تُدار من «الأدوار».'),k,n,co,ic,d,h('label',{class:'cmS'},a,' نشطة'),btn('حفظ',async()=>{await call('c_admin_badge_save',{key:k.inp.value.trim(),nameAr:n.inp.value,color:co.value,icon:ic.value,description:d.inp.value,active:a.checked});render()})),
- ...r.items.map(x=>h('div',{class:'cmC'},badge(x),h('span',{class:'cmS'},' '+x.key+(x.active?'':' (غير نشطة)')+' '+(x.description||'')),' ',h('button',{class:'cmBt s',type:'button',onclick:()=>{k.inp.value=x.key;n.inp.value=x.nameAr;co.value=x.color;ic.value=x.icon;d.inp.value=x.description||'';a.checked=x.active}},'تعديل'))))}
-async function rpPanel(b){const r=await call('c_admin_reports',{status:'pending'});b.replaceChildren(...(r.items.length?r.items.map(i=>h('div',{class:'cmC'},h('div',{class:'cmS'},(i.targetType==='post'?'منشور':'تعليق')+' · '+dt(i.createdAt)),h('div',{class:'cmP'},i.preview||'(محذوف)'),h('div',{class:'cmS'},'السبب: '+i.reason),h('div',{class:'cmRow'},btn('حذف المحتوى',async()=>{if(!confirm('حذف المحتوى المبلّغ عنه؟'))return;await call('c_admin_report_decide',{reportId:i.reportId,action:'remove'});render()},'d'),btn('تجاهل البلاغ',async()=>{await call('c_admin_report_decide',{reportId:i.reportId,action:'dismiss'});render()},'s')))):[empty('لا بلاغات معلّقة')]))}
-async function setPanel(b){const r=await call('c_admin_settings'),open=r.settings.join_requests_open==='true';
- const cur={};(r.deputyPermissions||[]).forEach(x=>{const q=x.split(':');cur[q[0]]=q[1]});
- const PN=[['task.create','إنشاء المهام'],['poll.create','إنشاء الاستطلاعات'],['announce.post','نشر الإعلانات']],ss=PN.map(([k])=>{const s=sel([['','بدون'],['own_committee','لجنته فقط'],['all','كل اللجان']]);s.value=cur[k]||'';return s});
- b.replaceChildren(h('div',{class:'cmC'},h('b',{},'استقبال طلبات الانضمام'),h('div',{class:'cmS'},open?'مفعّل':'متوقف'),btn(open?'إيقاف':'تفعيل',async()=>{await call('c_admin_set_setting',{key:'join_requests_open',value:open?'false':'true'});render()},'s')),
- h('div',{class:'cmC'},h('b',{},'صلاحيات دور «نائب»'),h('div',{class:'cmS'},'الدور وحده يحدد الصلاحيات؛ شارة «Deputy» لا تمنح شيئًا.'),...PN.map(([k,l],i)=>h('label',{class:'cmL'},l,ss[i])),btn('حفظ الصلاحيات',async()=>{await call('c_admin_set_setting',{key:'deputy_permissions',value:PN.map(([k],i)=>ss[i].value?k+':'+ss[i].value:null).filter(Boolean)});render()})),
- h('div',{class:'cmC'},h('b',{},'الرسائل الخاصة'),h('div',{class:'cmS'},'معطّلة افتراضيًا وغير متاحة في هذا الإصدار.')))}
-async function audPanel(b){const r=await call('c_admin_audit',{limit:100});b.replaceChildren(...r.items.map(i=>h('div',{class:'cmC'},h('b',{},i.action),h('div',{class:'cmS'},dt(i.ts)+' · '+i.actor+' → '+i.targetType+' '+i.targetId),i.detail&&i.detail!=='{}'?h('div',{class:'cmS',dir:'ltr'},i.detail):null)))}
-})();
 </script>
 </body>
 </html>
