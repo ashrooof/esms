@@ -738,7 +738,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
 <section data-s="ac" hidden>
 <div class="tl" id="acn"></div>
 <div class="qlf"><input id="acq" placeholder="بحث بالكود أو الاسم أو اللجنة" autocomplete="off"><select id="acc" aria-label="اللجنة"></select><select id="acs" aria-label="الحالة"><option value="all">كل الحالات</option><option value="accepted">مقبول</option><option value="review">تحت المراجعة</option><option value="rejected">غير مقبول</option></select><select id="acl" aria-label="الربط"><option value="">كل السجلات</option><option value="yes">مربوط بحساب</option><option value="no">غير مربوط</option><option value="unregistered">لم يسجّل بعد</option></select></div>
-<div class="acts" style="grid-template-columns:repeat(3,auto);justify-content:start"><button class="btn sm" id="acnew" type="button">إضافة مقبول</button><button class="btn sec sm" id="acimp" type="button">استيراد CSV</button><button class="btn sec sm" id="acref" type="button">تحديث</button></div>
+<div class="acts" style="grid-template-columns:repeat(3,auto);justify-content:start"><button class="btn sm" id="acquick" type="button">إضافة أكواد بسرعة</button><button class="btn sm" id="acnew" type="button">إضافة مقبول</button><button class="btn sec sm" id="acimp" type="button">استيراد CSV</button><button class="btn sec sm" id="acref" type="button">تحديث</button></div>
 <div id="acform" hidden></div><div id="acmsg" class="hint" role="status"></div>
 <div class="qlw"><table class="qtab"><thead><tr><th>الكود</th><th>الاسم</th><th>اللجنة</th><th>الحالة</th><th>رقم العضوية</th><th>التسجيل</th><th></th></tr></thead><tbody id="acb"></tbody></table></div>
 <button class="btn sec sm" id="acmore" type="button" style="display:none">تحميل المزيد</button></section>
@@ -765,7 +765,7 @@ body::before{background:radial-gradient(900px 480px at 50% -140px,rgba(217,180,9
    ESMS · Frontend
    متوافق مع Google Apps Script Backend
    ═══════════════════════════════════════════════════════════════ */
-const API_URL='https://script.google.com/macros/s/AKfycby8hRJJjCuTPWPMd1Bo_HPFbMB7yFCgkEGcfn7n3cOnhnZZoICFbzmI7ldIp_RND-g/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbzDuEvsWRs6WmcxmT23xzmLqFV87DUmdXsFQ9Kmqh9Bob9IgakeIZIe-u83gG-n9ffb/exec';
 const ST={review:['تحت المراجعة','#b8923a'],accepted:['مقبول','#2f7d4f'],rejected:['غير مقبول','#b3392e']};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1572,7 +1572,7 @@ $('go').onclick=async e=>{
     const rs=await apiPost({action:'register',name:v.name,code:v.code,phone:v.phone,nid:v.nid,
       committee:cmFull(COMMITTEES.find(c=>c.k===committee)),committeeCode:committee,year:yrName(year),yearNo:year,photo:photoData,ext});
     lastCode=v.code;$('regcodeVal').textContent=lastCode;
-    submitted=true;regM={code:v.code,name:v.name,nid:v.nid,phone:v.phone,committee:cmFull(COMMITTEES.find(c=>c.k===committee)),year:yrName(year),st:'review'};saveReg();
+    submitted=true;regM={code:v.code,name:v.name,nid:v.nid,phone:v.phone,committee:rs.committee||cmFull(COMMITTEES.find(c=>c.k===committee)),year:yrName(year),st:rs.status||'review'};saveReg();
     $('pf').style.width='100%';$('pt').textContent='100%';
     showDone();boom();
     toast(rs.userMessage||msgBuild('registration_confirmed',{name:v.name,code:v.code}),'ok');
@@ -1632,7 +1632,7 @@ async function lookup(){
   try{
     const vp=verifyParams($('lv').value);
     if(!vp){setSt('idle','اكتب بيان التحقق: '+VF_LBL[cfg.verifyField||'nid']);return}
-    const r=await apiGet('lookup',{code:raw,...vp,src:'web',rid:Date.now().toString(36)+Math.random().toString(36).slice(2,10)});
+    const r=await apiPost({action:'lookup',code:raw,...vp,src:'web',rid:Date.now().toString(36)+Math.random().toString(36).slice(2,10)});
     if(!r.found){LT='';setSt('nf',r.message||'تعذر مطابقة البيانات');return}
     LT=r.lookupToken||'';
     const m={code:String(r.code==null?'':r.code).trim(),name:r.name,st:r.status||'review',photo:'',photoUrl:'',photoId:'',present:'',msg:r.message||'',
@@ -2076,10 +2076,11 @@ async function saveSettingsFull(patch){
 
 /* ── المقبولون ── */
 const AC={rows:[],total:0,more:false,seq:0,edit:null,busy:false};
+const ACC_CMS=COMMITTEES.concat([{k:'IV',ar:'وحدة الاستثمار',ic:'hr'},{k:'MS',ar:'وحدة دراسة الأسواق',ic:'hr'}]);
 const AC_ST={accepted:['مقبول','#2f7d4f'],review:['تحت المراجعة','#b8923a'],rejected:['غير مقبول','#b3392e']};
 function acOpen(){
   if(!ADMIN_TOKEN)return;
-  const sel=$('acc');if(!sel.options.length)sel.innerHTML='<option value="all">كل اللجان</option>'+COMMITTEES.map(c=>`<option value="${c.k}">${c.k} · ${esc(c.ar)}</option>`).join('');
+  const sel=$('acc');if(!sel.options.length)sel.innerHTML='<option value="all">كل اللجان</option>'+ACC_CMS.map(c=>`<option value="${c.k}">${c.k} · ${esc(c.ar)}</option>`).join('');
   acLoad(true);
 }
 async function acLoad(reset){
@@ -2092,9 +2093,9 @@ async function acLoad(reset){
 }
 function acRender(){
   const c=AC.counts||{total:0,linked:0,byCommittee:{}};
-  $('acn').innerHTML=`<div><b>${c.total}</b>إجمالي المقبولين</div><div><b>${c.linked}</b>مربوط بحساب</div>`+COMMITTEES.map(x=>`<div><b>${c.byCommittee[x.k]||0}</b>${x.k}</div>`).join('');
+  $('acn').innerHTML=`<div><b>${c.total}</b>إجمالي المقبولين</div><div><b>${c.linked}</b>مربوط بحساب</div>`+ACC_CMS.map(x=>`<div><b>${c.byCommittee[x.k]||0}</b>${x.k}</div>`).join('');
   $('acb').innerHTML=AC.rows.length?AC.rows.map(x=>{
-    const s=AC_ST[statusKeyF(x.Status)],cm=cmOf(x.Committee);
+    const s=AC_ST[statusKeyF(x.Status)],cm=ACC_CMS.find(c=>String(x.Committee).toUpperCase().includes('('+c.k+')')||String(x.Committee).toUpperCase()===c.k);
     const reg=x.Linked?'<span class="qb" style="--c:#2f7d4f">مربوط</span>':x.Registered?'<span class="qb" style="--c:#b8923a">مسجّل</span>':'<span class="qb" style="--c:#6b6250">لم يسجّل</span>';
     return `<tr><td dir="ltr">${esc(x.Code)}</td><td>${esc(x.Name)}</td><td>${cm?esc(cm.k+' · '+cm.ar):'—'}</td><td><span class="qb" style="--c:${s[1]}">${s[0]}</span></td><td dir="ltr">${esc(x.MembershipCode||'—')}</td><td>${reg}</td>
     <td style="white-space:nowrap"><button class="btn sec sm" onclick="acEdit('${esc(x.Code)}')">تعديل</button> ${x.Registered?`<button class="btn sec sm" onclick="openProfile('${esc(x.Code)}')">الملف</button> `:''}${x.Linked?`<button class="btn sec sm" onclick="acUnlink('${esc(x.Code)}')">فك الربط</button> `:''}<button class="btn sec sm del" onclick="acDel('${esc(x.Code)}',${x.Linked})">حذف</button></td></tr>`;
@@ -2104,9 +2105,9 @@ function acRender(){
 const statusKeyF=s=>/^(accepted|مقبول)$/i.test(String(s))?'accepted':/^(rejected|مرفوض|غير مقبول)$/i.test(String(s))?'rejected':'review';
 function acForm(x){
   AC.edit=x?x.Code:null;const f=$('acform');f.hidden=false;
-  const cm=x&&cmOf(x.Committee);
-  f.innerHTML=`<div class="acf"><label>الكود الجامعي<input id="af_c" dir="ltr" inputmode="numeric" value="${esc(x?x.Code:'')}"></label><label>الاسم<input id="af_n" value="${esc(x?x.Name:'')}"></label>
-  <label>اللجنة<select id="af_m">${COMMITTEES.map(c=>`<option value="${c.k}" ${cm&&cm.k===c.k?'selected':''}>${c.k} · ${esc(c.ar)}</option>`).join('')}</select></label>
+  const cm=x&&ACC_CMS.find(c=>String(x.Committee).toUpperCase().includes('('+c.k+')')||String(x.Committee).toUpperCase()===c.k);
+  f.innerHTML=`<div class="acf"><label>الكود الجامعي<input id="af_c" dir="ltr" inputmode="numeric" value="${esc(x?x.Code:'')}"></label><label>الاسم (اختياري)<input id="af_n" value="${esc(x?x.Name:'')}"></label>
+  <label>اللجنة<select id="af_m">${ACC_CMS.map(c=>`<option value="${c.k}" ${cm&&cm.k===c.k?'selected':''}>${c.k} · ${esc(c.ar)}</option>`).join('')}</select></label>
   <label>الحالة<select id="af_s">${Object.entries(AC_ST).map(([k,v])=>`<option value="${k}" ${x&&statusKeyF(x.Status)===k||!x&&k==='accepted'?'selected':''}>${v[0]}</option>`).join('')}</select></label>
   <label>رقم العضوية (اختياري)<input id="af_b" dir="ltr" value="${esc(x?x.MembershipCode:'')}"></label><label>ملاحظات<input id="af_t" value="${esc(x?x.Notes:'')}"></label></div>
   <div class="acts" style="grid-template-columns:auto auto;justify-content:start"><button class="btn sm" id="af_ok" type="button">${x?'حفظ التعديل':'إضافة'}</button><button class="btn sec sm" id="af_x" type="button">إلغاء</button></div>`;
@@ -2139,6 +2140,23 @@ function parseCsv(t){
     else cur+=ch}
   row.push(cur);if(row.some(x=>x.trim()))rows.push(row);return rows;
 }
+function acQuick(){
+  const f=$('acform');f.hidden=false;
+  f.innerHTML=`<div class="acf"><label>اللجنة / الوحدة<select id="qa_m">${ACC_CMS.map(c=>`<option value="${c.k}">${c.k} · ${esc(c.ar)}</option>`).join('')}</select></label>
+  <label style="grid-column:1/-1">الأكواد (كل كود في سطر، أو مفصولة بمسافة/فاصلة)<textarea id="qa_t" dir="ltr" placeholder="26210394&#10;26210034"></textarea></label></div>
+  <div class="acts" style="grid-template-columns:repeat(2,auto);justify-content:start"><button class="btn sm" id="qa_ok" type="button">إضافة الأكواد</button><button class="btn sec sm" id="qa_x" type="button">إلغاء</button></div><div id="qa_r" class="hint"></div>`;
+  $('qa_x').onclick=()=>{f.hidden=true;f.innerHTML=''};
+  $('qa_ok').onclick=async()=>{
+    const codes=[...new Set(arDig($('qa_t').value).split(/[^0-9]+/).filter(x=>x.length>=4))];
+    if(!codes.length){$('qa_r').textContent='اكتب كود واحد على الأقل';return}
+    const b=$('qa_ok');b.disabled=true;$('qa_r').textContent='جاري الإضافة…';
+    try{
+      const r=await apiPost({action:'accepted_import',...auth(),dryRun:false,rows:codes.map(c=>({code:c,committee:$('qa_m').value,status:'accepted'}))});
+      $('qa_r').innerHTML=`تم: جديد <b>${r.added}</b> · محدّث <b>${r.updated}</b>`+(r.errors.length?' · أخطاء <b>'+r.errors.length+'</b><br>'+r.errors.slice(0,20).map(x=>esc(x.code)+': '+esc(x.reason)).join('<br>'):'');
+      $('qa_t').value='';acLoad(true);loadAll(true).catch(()=>{});
+    }catch(e){$('qa_r').textContent=e.message||'تعذر التنفيذ'}finally{b.disabled=false}
+  };
+}
 function acImport(){
   const f=$('acform');f.hidden=false;
   f.innerHTML=`<div class="acf"><label style="grid-column:1/-1">ملف CSV (الأعمدة: الكود، الاسم، اللجنة، [الحالة]، [رقم العضوية])<input id="im_f" type="file" accept=".csv,.txt,text/csv"></label><textarea id="im_t" placeholder="20250123,أشرف موسى عزيز,AC&#10;20250456,منى خالد سعيد,HR"></textarea></div>
@@ -2159,7 +2177,7 @@ function acImport(){
   };
   $('im_p').onclick=()=>run(true);$('im_a').onclick=()=>run(false);
 }
-$('acnew').onclick=()=>acForm(null);$('acimp').onclick=acImport;$('acref').onclick=()=>acLoad(true);$('acmore').onclick=()=>acLoad(false);
+$('acquick').onclick=acQuick;$('acnew').onclick=()=>acForm(null);$('acimp').onclick=acImport;$('acref').onclick=()=>acLoad(true);$('acmore').onclick=()=>acLoad(false);
 let acT=null;$('acq').oninput=()=>{clearTimeout(acT);acT=setTimeout(()=>acLoad(true),350)};['acc','acs','acl'].forEach(i=>$(i).onchange=()=>acLoad(true));
 
 /* ── إعدادات الاستعلام والرسائل ── */
